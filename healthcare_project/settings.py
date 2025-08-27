@@ -92,3 +92,8 @@ AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
+
+ALLOWED_HOSTS = [
+    '127.0.0.1', 
+    '.vercel.app' # This will allow your main URL and all preview URLs
+]
