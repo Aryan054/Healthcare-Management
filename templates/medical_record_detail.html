@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Medical Record Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Medical Record: {{ record.title }}</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Record Details</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Patient:</strong> {{ record.patient.user.get_full_name }}</p>
+                    <p><strong>Doctor:</strong> Dr. {{ record.doctor.user.get_full_name }}</p>
+                    <p><strong>Record Type:</strong> {{ record.get_record_type_display }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Date Created:</strong> {{ record.created_at }}</p>
+                    {% if record.appointment %}
+                    <p><strong>Associated Appointment:</strong> <a href="{% url 'appointment_detail' record.appointment.pk %}">#{{ record.appointment.appointment_number }}</a></p>
+                    {% endif %}
+                </div>
+            </div>
+            <hr>
+            <div class="mt-3">
+                <h5>Symptoms</h5>
+                <p>{{ record.symptoms|linebreaksbr|default:"Not specified." }}</p>
+
+                <h5>Diagnosis</h5>
+                <p>{{ record.diagnosis|linebreaksbr|default:"Not specified." }}</p>
+
+                <h5>Treatment</h5>
+                <p>{{ record.treatment|linebreaksbr|default:"Not specified." }}</p>
+                
+                <h5>Notes</h5>
+                <p>{{ record.notes|linebreaksbr|default:"None." }}</p>
+
+                {% if record.document %}
+                <hr>
+                <h5>Attached Document</h5>
+                <p><a href="{{ record.document.url }}" target="_blank" class="btn btn-secondary">View Document</a></p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <a href="{% url 'medical_record_list' %}" class="btn btn-outline-secondary">Back to All Records</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

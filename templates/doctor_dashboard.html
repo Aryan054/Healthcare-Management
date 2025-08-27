@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %} <!-- Required for the default avatar image -->
+
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Doctor Welcome Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4 d-flex align-items-center">
+            <!-- Profile Picture -->
+            {% if request.user.profile.profile_picture %}
+                <img src="{{ request.user.profile.profile_picture.url }}" alt="Dr. {{ request.user.get_full_name }}" class="rounded-circle me-4" style="width: 100px; height: 100px; object-fit: cover;">
+            {% else %}
+                <img src="{% static 'images/default_avatar.png' %}" alt="Default Avatar" class="rounded-circle me-4" style="width: 100px; height: 100px; object-fit: cover;">
+            {% endif %}
+            
+            <!-- Welcome Message and Details -->
+            <div>
+                <h2 class="mb-1">Welcome, Dr. {{ request.user.get_full_name|default:request.user.username }}!</h2>
+                <p class="text-muted mb-0">Here is your dashboard for today. Manage your patients and schedule from here.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Column: Appointments -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Today's Appointments</h4>
+                </div>
+                <div class="card-body">
+                    {% if today_appointments %}
+                        <ul class="list-group list-group-flush">
+                            {% for appt in today_appointments %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                                    <div>
+                                        <strong>{{ appt.patient.user.get_full_name }}</strong> at {{ appt.appointment_time|time:"g:i A" }}
+                                        <br><small class="text-muted">Status: {{ appt.get_status_display }}</small>
+                                    </div>
+                                    <a href="{% url 'appointment_detail' appt.pk %}" class="btn btn-sm btn-outline-primary mt-2 mt-md-0">View Details</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-center p-3">You have no appointments scheduled for today.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light text-center">
+                     <a href="{% url 'appointment_list' %}" class="btn btn-secondary">View All Appointments</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Side Column: Stats & Actions -->
+        <div class="col-lg-4 mb-4">
+            <!-- Quick Stats Card -->
+            <div class="card shadow-sm mb-4">
+                 <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Quick Stats</h4>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="display-4">{{ patient_count }}</h3>
+                    <p class="lead">Total Patients</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card shadow-sm">
+                 <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Quick Actions</h4>
+                </div>
+                 <div class="list-group list-group-flush">
+                    <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Update Professional Profile</a>
+                    
+                    <!-- 
+                    =================================================
+                    THE FIX IS HERE:
+                    The href attribute now correctly points to the
+                    URL named 'manage_availability'.
+                    =================================================
+                    -->
+                    <a href="{% url 'manage_availability' %}" class="list-group-item list-group-item-action">Manage Availability</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

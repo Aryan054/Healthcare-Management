@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Generate System Reports</h2>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Report Criteria</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Select the type of report and the desired date range to generate a summary.</p>
+                    <form method="post" id="reportForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.report_type.id_for_label }}" class="form-label fw-bold">1. Select Report Type</label>
+                            {{ form.report_type }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.date_range.id_for_label }}" class="form-label fw-bold">2. Select Date Range</label>
+                            {{ form.date_range }}
+                        </div>
+
+                        <div id="custom-date-range" style="display: none;">
+                            <p class="fw-bold">3. Enter Custom Dates</p>
+                             {% if form.non_field_errors %}
+                                <div class="alert alert-danger small">
+                                    {{ form.non_field_errors.as_ul }}
+                                </div>
+                            {% endif %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                                    {{ form.start_date }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                                    {{ form.end_date }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Generate Report</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Style form inputs to be consistent */
+select, input[type='date'] {
+    display: block;
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateRangeSelect = document.getElementById('{{ form.date_range.id_for_label }}');
+    const customDateRangeDiv = document.getElementById('custom-date-range');
+
+    function toggleCustomDateRange() {
+        if (dateRangeSelect.value === 'custom') {
+            customDateRangeDiv.style.display = 'block';
+        } else {
+            customDateRangeDiv.style.display = 'none';
+        }
+    }
+
+    // Check on page load
+    toggleCustomDateRange();
+
+    // Check when selection changes
+    dateRangeSelect.addEventListener('change', toggleCustomDateRange);
+});
+</script>
+{% endblock %}

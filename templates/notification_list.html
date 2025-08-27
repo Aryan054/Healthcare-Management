@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Notifications</h2>
+        {% if unread_count > 0 %}
+            <!-- This link will mark all notifications as read -->
+            <a href="{% url 'notification_mark_read' pk=0 %}" class="btn btn-sm btn-outline-primary">Mark All as Read</a>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            {% if notifications %}
+            <div class="list-group list-group-flush">
+                {% for notification in notifications %}
+                <!-- Add a light background for unread notifications -->
+                <div class="list-group-item list-group-item-action {% if not notification.is_read %}bg-light{% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">{{ notification.title }}</h5>
+                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <small class="text-muted">Type: {{ notification.get_notification_type_display }}</small>
+                        <div>
+                            <!-- Show "Mark as Read" button only if it's unread -->
+                            {% if not notification.is_read %}
+                                <a href="{% url 'notification_mark_read' notification.pk %}" class="btn btn-sm btn-success">Mark as Read</a>
+                            {% endif %}
+                            
+                            <!-- Using a form for delete is safer -->
+                            <form action="{% url 'notification_delete' notification.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this notification?');">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center p-4">You have no notifications.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

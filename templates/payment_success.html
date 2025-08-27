@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Successful{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 text-center">
+        <div class="card shadow-sm">
+            <div class="card-body p-5">
+                <h1 class="text-success">✓</h1>
+                <h2 class="card-title">Payment Successful!</h2>
+                <p class="lead">Thank you for your payment. Your appointment is confirmed.</p>
+                <hr>
+                <div class="text-start">
+                    <p><strong>Transaction ID:</strong> {{ payment.transaction_id }}</p>
+                    <p><strong>Invoice Number:</strong> {{ payment.invoice_number }}</p>
+                    <p><strong>Amount Paid:</strong> ${{ payment.amount|floatformat:2 }}</p>
+                    <p><strong>Date:</strong> {{ payment.payment_date }}</p>
+                </div>
+                <hr>
+                <a href="{% url 'appointment_detail' payment.appointment.id %}" class="btn btn-primary">View Appointment Details</a>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

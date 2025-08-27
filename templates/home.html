@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to HealthSystem{% endblock %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-light rounded-3 text-center">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">Your Health, Our Priority</h1>
+        <p class="fs-4">Seamlessly connect with trusted doctors, manage your medical records, and book appointments with ease. Your complete healthcare solution is just one click away.</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+        {% else %}
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg">Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row text-center">
+    <div class="col-md-4">
+        <h3>Find Doctors</h3>
+        <p>Search for specialists and book appointments instantly.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>Manage Records</h3>
+        <p>Keep all your medical history safe and accessible.</p>
+    </div>
+    <div class="col-md-4">
+        <h3>Stay Notified</h3>
+        <p>Get reminders for your upcoming appointments.</p>
+    </div>
+</div>
+{% endblock %}

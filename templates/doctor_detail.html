@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %} <!-- Add this line -->
+
+{% block title %}Dr. {{ doctor.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 text-center">
+                 
+                 <!-- CORRECTED IMAGE HANDLING -->
+                {% if doctor.user.profile.profile_picture %}
+                    <img src="{{ doctor.user.profile.profile_picture.url }}" alt="Dr. {{ doctor.user.get_full_name }}" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                {% else %}
+                    <img src="{% static 'images/default_avatar.png' %}" alt="Default Avatar" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                {% endif %}
+
+                 <h4>Dr. {{ doctor.user.get_full_name }}</h4>
+                 <p class="text-muted">
+                    {% for spec in doctor.specializations.all %}{{ spec.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                 </p>
+                 {% if is_patient %}
+                    <a href="{% url 'book_appointment' doctor.id %}" class="btn btn-primary">Book Appointment</a>
+                 {% endif %}
+            </div>
+            <div class="col-md-9">
+                <h3>Professional Details</h3>
+                <p><strong>Experience:</strong> {{ doctor.experience_years }} years</p>
+                <p><strong>Consultation Fee:</strong> ${{ doctor.consultation_fee }}</p>
+                <p><strong>Clinic Address:</strong> {{ doctor.clinic_address }}</p>
+                <p><strong>Languages:</strong> {{ doctor.languages }}</p>
+                <p><strong>Rating:</strong> {{ average_rating|floatformat:1|default:"N/A" }}/5 (from {{ review_count }} reviews)</p>
+                
+                <hr>
+
+                <h3>Reviews</h3>
+                {% for review in reviews %}
+                    <div class="mb-2">
+                        <strong>{{ review.appointment.patient.user.username }}</strong> rated {{ review.rating }}/5
+                        <p>{{ review.comment }}</p>
+                    </div>
+                {% empty %}
+                    <p>No reviews yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Appointment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4 text-center">Book Appointment with Dr. {{ doctor.user.get_full_name }}</h2>
+  
+  <div class="card shadow-sm p-4">
+    <form method="POST">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      
+      <div class="mb-3">
+        {{ form.appointment_date.label_tag }}
+        {{ form.appointment_date }}
+        {{ form.appointment_date.errors }}
+      </div>
+      
+      <div class="mb-3">
+        {{ form.appointment_time.label_tag }}
+        {{ form.appointment_time }}
+        {{ form.appointment_time.errors }}
+      </div>
+      
+      <div class="mb-3">
+        {{ form.reason.label_tag }}
+        {{ form.reason }}
+        {{ form.reason.errors }}
+      </div>
+
+      {{ form.doctor }} <!-- hidden input -->
+
+      <button type="submit" class="btn btn-primary w-100">Book Appointment</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

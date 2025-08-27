@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Reschedule Appointment{% endblock %}
+
+{% block content %}
+<h2>Reschedule Appointment #{{ appointment.appointment_number }}</h2>
+<p>Select a new date and time for your appointment.</p>
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Confirm Reschedule</button>
+            <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

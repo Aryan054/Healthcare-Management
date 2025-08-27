@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Add a New Doctor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Add a New Doctor</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">New Doctor Details</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors.as_ul }}</div>
+                        {% endif %}
+
+                        <h5 class="mb-3 border-bottom pb-2">Account Credentials</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.as_text }}</div>{% endif %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email Address</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.as_text }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">Initial Password</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.as_text }}</div>{% endif %}
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="mb-3 border-bottom pb-2">Personal & Professional Details</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                                {{ form.first_name }}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                                {{ form.last_name }}
+                            </div>
+                        </div>
+                         <div class="mb-3">
+                            <label for="{{ form.specialization.id_for_label }}" class="form-label">Specialization</label>
+                            {{ form.specialization }}
+                            {% if form.specialization.errors %}<div class="text-danger small mt-1">{{ form.specialization.errors.as_text }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.license_number.id_for_label }}" class="form-label">License Number</label>
+                            {{ form.license_number }}
+                            {% if form.license_number.errors %}<div class="text-danger small mt-1">{{ form.license_number.errors.as_text }}</div>{% endif %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.experience_years.id_for_label }}" class="form-label">Years of Experience</label>
+                                {{ form.experience_years }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.consultation_fee.id_for_label }}" class="form-label">Consultation Fee ($)</label>
+                                {{ form.consultation_fee }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.clinic_address.id_for_label }}" class="form-label">Clinic Address</label>
+                            {{ form.clinic_address }}
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Doctor Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Consistent styling for form fields */
+input[type='text'], input[type='email'], input[type='password'], 
+input[type='number'], input[type='decimal'], select, textarea {
+    display: block;
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+}
+</style>
+{% endblock %}

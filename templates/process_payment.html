@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Process Payment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">Secure Online Payment</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Payment Summary</h5>
+                <p><strong>Appointment with:</strong> Dr. {{ appointment.doctor.user.get_full_name }}</p>
+                <p><strong>Date:</strong> {{ appointment.appointment_date|date:"F d, Y" }}</p>
+                <p class="h4"><strong>Total Amount:</strong> ${{ payment.amount|floatformat:2 }}</p>
+                <hr>
+
+                <p class="text-muted small">(This is a simulated payment gateway. Do not use real card details.)</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.card_number.id_for_label }}" class="form-label">{{ form.card_number.label }}</label>
+                        {{ form.card_number }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <label for="{{ form.expiry_month.id_for_label }}" class="form-label">{{ form.expiry_month.label }}</label>
+                            {{ form.expiry_month }}
+                        </div>
+                        <div class="col-md-5 mb-3">
+                             <label for="{{ form.expiry_year.id_for_label }}" class="form-label">{{ form.expiry_year.label }}</label>
+                            {{ form.expiry_year }}
+                        </div>
+                        <div class="col-md-2 mb-3">
+                             <label for="{{ form.cvv.id_for_label }}" class="form-label">{{ form.cvv.label }}</label>
+                            {{ form.cvv }}
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">Pay ${{ payment.amount|floatformat:2 }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+/* Style form inputs to be consistent */
+input[type='text'], input[type='password'] {
+    display: block; width: 100%; padding: .375rem .75rem;
+    font-size: 1rem; border: 1px solid #ced4da; border-radius: .25rem;
+}
+</style>
+{% endblock %}

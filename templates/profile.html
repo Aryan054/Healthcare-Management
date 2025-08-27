@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<h2>Manage Your Profile</h2>
+<p>Keep your information up-to-date.</p>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <h4>Account Information</h4>
+            {{ user_form.as_p }}
+             <hr>
+        <div class="d-grid">
+            <a href="{% url 'change_password' %}" class="btn btn-outline-secondary">Change Password</a>
+        </div>
+            <hr>
+            <h4>Personal Profile</h4>
+            {{ profile_form.as_p }}
+
+            {% if doctor_form %}
+                <hr>
+                <h4>Doctor's Professional Information</h4>
+                {{ doctor_form.as_p }}
+            {% endif %}
+
+            {% if patient_form %}
+                <hr>
+                <h4>Patient's Medical Information</h4>
+                {{ patient_form.as_p }}
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
