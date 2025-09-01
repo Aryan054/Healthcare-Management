@@ -143,20 +143,8 @@
                     <hr>
                     
                     <!-- Action 2: Create or View Medical Record -->
-                    <div>
-                        <label class="form-label"><strong>Medical Record</strong></label>
-                        <div class="d-grid">
-                            {% if appointment.status == 'completed' %}
-                                {% if appointment.medicalrecord_set.first %}
-                                    <a href="{% url 'medical_record_detail' appointment.medicalrecord_set.first.pk %}" class="btn btn-info">View Medical Record</a>
-                                {% else %}
-                                    <a href="{% url 'create_medical_record' appointment.id %}" class="btn btn-primary">Create Medical Record</a>
-                                {% endif %}
-                            {% else %}
-                                <p class="form-text">A medical record can be created after this appointment is marked as "Completed".</p>
-                            {% endif %}
-                        </div>
-                    </div>
+
+</div>
                 </div>
             </div>
             {% endif %}

@@ -57,14 +57,9 @@ def get_or_create_doctor(user):
     })
     return doctor
 
-def is_patient(user):
-    return user.is_authenticated and getattr(user, "role", None) == "patient"
-
-def is_doctor(user):
-    return user.is_authenticated and getattr(user, "role", None) == "doctor"
-
-def is_admin(user):
-    return user.is_authenticated and (getattr(user, "role", None) == "admin" or user.is_superuser)
+def is_patient(user): return user.is_authenticated and user.role == 'patient'
+def is_doctor(user): return user.is_authenticated and user.role == 'doctor'
+def is_admin(user): return user.is_authenticated and (user.role == 'admin' or user.is_superuser)
 
 # ==========================
 # Home View
@@ -118,8 +113,29 @@ def user_logout(request):
 
 @user_passes_test(is_admin)
 def user_list(request):
-    users = User.objects.all().order_by("-date_joined")
-    return render(request, "user_list.html", {"users": users})
+    queryset = User.objects.all().order_by("-date_joined")
+    search_query = request.GET.get('q', '')
+
+    if search_query:
+        # If a search term was provided, filter the queryset
+        queryset = queryset.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        ).distinct()
+    # ==========================================================
+
+    # Paginate the final, filtered results
+    paginator = Paginator(queryset, 15) # Show 15 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+    }
+    return render(request, "user_list.html", context)
 
 
 
@@ -168,24 +184,24 @@ def patient_dashboard(request):
 @user_passes_test(is_doctor)
 def doctor_dashboard(request):
     doctor = get_or_create_doctor(request.user)
-    if not doctor:
-        messages.error(request, "Could not find or create doctor profile.")
-        return redirect('home')
-
     today = timezone.now().date()
+    
     today_appointments = Appointment.objects.filter(
-        doctor=doctor, appointment_date=today, status__in=['confirmed', 'rescheduled']
+        doctor=doctor, 
+        appointment_date=today,
+        status__in=['pending', 'confirmed', 'rescheduled']
     ).order_by('appointment_time')
-
+    
     patient_count = Patient.objects.filter(appointments__doctor=doctor).distinct().count()
     
+    # This line fetches the count of unread notifications for the doctor
+    unread_notifications_count = Notification.objects.filter(recipient=request.user, is_read=False, is_deleted=False).count()
+    
     context = {
-        'doctor': doctor,
-        'today_appointments': today_appointments,
-        'upcoming_appointments': Appointment.objects.filter(
-            doctor=doctor, appointment_date__gte=today, status__in=['pending', 'confirmed', 'rescheduled']
-        ).order_by('appointment_date', 'appointment_time')[:10],
-        'patient_count': Patient.objects.filter(appointments__doctor=doctor).distinct().count(),
+        'doctor': doctor, 
+        'today_appointments': today_appointments, 
+        'patient_count': patient_count,
+        'unread_notifications_count': unread_notifications_count, # Pass the count to the template
     }
     return render(request, 'doctor_dashboard.html', context)
 
@@ -265,6 +281,7 @@ def change_password(request):
             messages.error(request, 'Please correct the error below.')
     else:
         form = PasswordChangeForm(request.user)
+        messages.error(request, 'Please correct the error below.')
     
     return render(request, 'change_password.html', {'form': form})
 # ==========================
@@ -366,6 +383,7 @@ def book_appointment(request, doctor_id):
             return redirect('appointment_detail', pk=appointment.id)
     else:
         form = AppointmentForm(initial={'doctor': doctor})
+        messages.error(request, 'Booking failed. Please check the errors in the form.')
 
     return render(request, 'book_appointment.html', {
         'doctor': doctor,
@@ -387,31 +405,23 @@ def appointment_detail(request, pk):
             (is_doctor(user) and appointment.doctor.user == user)):
         return HttpResponseForbidden("You do not have permission to view this appointment.")
 
-    # Initialize the review form
     review_form = ReviewForm()
     
-    # Handle POST requests (for both status updates and review submissions)
     if request.method == 'POST':
         # Handle review submission by the patient
         if is_patient(user) and 'submit_review' in request.POST:
-            # Prevent reviewing an appointment that is not yet completed
-            if appointment.status != 'completed':
+            if appointment.status == 'completed':
+                review_form = ReviewForm(request.POST)
+                if review_form.is_valid():
+                    # Use update_or_create to link review to appointment and prevent duplicates
+                    Review.objects.update_or_create(
+                        appointment=appointment,
+                        defaults=review_form.cleaned_data
+                    )
+                    messages.success(request, 'Thank you for your review!')
+                    return redirect('appointment_detail', pk=pk)
+            else:
                 messages.error(request, "You can only review completed appointments.")
-                return redirect('appointment_detail', pk=pk)
-
-            review_form = ReviewForm(request.POST)
-            if review_form.is_valid():
-                # Use update_or_create to prevent duplicate reviews for one appointment
-                review, created = Review.objects.update_or_create(
-                    appointment=appointment,
-                    defaults={
-                        'rating': review_form.cleaned_data['rating'],
-                        'comment': review_form.cleaned_data['comment'],
-                        'is_anonymous': review_form.cleaned_data['is_anonymous'],
-                    }
-                )
-                messages.success(request, 'Thank you for your review!')
-                return redirect('appointment_detail', pk=pk)
         
         # Handle status update by the doctor
         elif is_doctor(user) and 'update_status' in request.POST:
@@ -420,16 +430,14 @@ def appointment_detail(request, pk):
                 appointment.status = new_status
                 appointment.save()
                 messages.success(request, f'Appointment status updated to {appointment.get_status_display()}.')
-                # Optional: Send a notification to the patient
-                Notification.objects.create(
-                    recipient=appointment.patient.user,
-                    notification_type='appointment',
-                    title=f'Appointment Status Updated',
-                    message=f'Your appointment #{appointment.appointment_number} with Dr. {appointment.doctor.user.get_full_name()} has been updated to "{appointment.get_status_display()}".'
-                )
                 return redirect('appointment_detail', pk=pk)
 
-    # Determine if the patient can review this appointment
+    # ==========================================================
+    # ------------------- THE FIX IS HERE ----------------------
+    # ==========================================================
+    # This logic correctly determines if the patient can leave a review.
+    # It checks if the user is a patient, if the appointment is completed,
+    # and if a review for this specific appointment does NOT already exist.
     can_review = (
         is_patient(user) and
         appointment.status == 'completed' and
@@ -460,13 +468,34 @@ def appointment_list(request):
         appointments = Appointment.objects.all()
     else:
         return HttpResponseForbidden()
+    
+    search_query = request.GET.get('q', '')
+
+    if search_query:
+        # If a search term exists, filter the 'appointments' queryset further
+        appointments = appointments.filter(
+            Q(patient__user__first_name__icontains=search_query) |
+            Q(patient__user__last_name__icontains=search_query) |
+            Q(doctor__user__first_name__icontains=search_query) |
+            Q(doctor__user__last_name__icontains=search_query) |
+            Q(appointment_number__icontains=search_query) 
+          
+     
+
+            
+            
+
+        ).distinct()
 
     appointments = appointments.order_by('-appointment_date', '-appointment_time')
 
-    return render(request, 'appointment_list.html', {
+    context = {
         'appointments': appointments,
-        'status_choices': Appointment.STATUS_CHOICES
-    })
+        'status_choices': Appointment.STATUS_CHOICES,
+        'search_query': search_query, # Add this to the context
+    }
+    
+    return render(request, 'appointment_list.html', context)
 
 @login_required
 @user_passes_test(is_patient)
@@ -560,7 +589,7 @@ def delete_availability(request, pk):
 @login_required
 @user_passes_test(is_doctor)
 def create_medical_record(request, appointment_id):
-    # This view now correctly accepts 'appointment_id'
+    # This view's signature now correctly accepts 'appointment_id'
     appointment = get_object_or_404(Appointment, pk=appointment_id, doctor__user=request.user)
     patient = appointment.patient
     doctor = appointment.doctor
@@ -586,12 +615,15 @@ def create_medical_record(request, appointment_id):
     return render(request, 'create_medical_record.html', context)
 
 
+
+
+# ================================
+# List Medical Records
+# ================================
 @login_required
 def medical_record_list(request):
     user = request.user
-    records = []
-    
-    # Check the user's role to fetch appropriate records
+
     if is_patient(user):
         try:
             patient = user.patient
@@ -599,7 +631,7 @@ def medical_record_list(request):
         except Patient.DoesNotExist:
             messages.warning(request, "Your patient profile is not yet complete.")
             return redirect('profile')
-            
+
     elif is_doctor(user):
         try:
             doctor = user.doctor
@@ -607,13 +639,13 @@ def medical_record_list(request):
         except Doctor.DoesNotExist:
             messages.warning(request, "Your doctor profile is not yet complete.")
             return redirect('profile')
-            
+
     else:
-        # Admins can see all records
+        # Admins or staff can see all records
         records = MedicalRecord.objects.all().order_by('-created_at')
 
     # Paginate the results
-    paginator = Paginator(records, 10) # Show 10 records per page
+    paginator = Paginator(records, 10)  # Show 10 records per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -622,6 +654,10 @@ def medical_record_list(request):
     }
     return render(request, 'medical_record_list.html', context)
 
+
+# ================================
+# Medical Record Detail
+# ================================
 @login_required
 def medical_record_detail(request, pk):
     record = get_object_or_404(MedicalRecord, pk=pk)
@@ -631,8 +667,7 @@ def medical_record_detail(request, pk):
     if is_patient(user) and record.patient.user != user:
         return HttpResponseForbidden("You do not have permission to view this record.")
     if is_doctor(user) and record.doctor.user != user:
-        # A doctor can only see records they created
-        pass # Or add more restrictive logic if needed
+        return HttpResponseForbidden("You do not have permission to view this record.")
 
     context = {
         'record': record
@@ -851,67 +886,96 @@ def get_available_time_slots(request):
 @login_required
 @user_passes_test(is_admin)
 def generate_report(request):
-    if request.method == 'POST':
-        form = ReportGenerationForm(request.POST)
-        if form.is_valid():
-            report_type = form.cleaned_data['report_type']
-            date_range = form.cleaned_data['date_range']
-            start_date = form.cleaned_data.get('start_date')
-            end_date = form.cleaned_data.get('end_date')
-            
-            # Determine date range based on selection
-            today = timezone.now().date()
-            if date_range == 'today':
-                start_date = end_date = today
-            elif date_range == 'this_week':
-                start_date = today - timedelta(days=today.weekday())
-                end_date = start_date + timedelta(days=6)
-            elif date_range == 'this_month':
-                start_date = today.replace(day=1)
-                next_month = (start_date.replace(day=28) + timedelta(days=4))
-                end_date = next_month - timedelta(days=next_month.day)
-            elif date_range == 'this_year':
-                start_date = today.replace(month=1, day=1)
-                end_date = today.replace(month=12, day=31)
-            
-            # Prepare data and render the specific report template
-            context = {
-                'start_date': start_date,
-                'end_date': end_date,
-                'date_range_display': dict(ReportGenerationForm.DATE_RANGE_CHOICES).get(date_range),
-            }
-
-            if report_type == 'appointments':
-                queryset = Appointment.objects.filter(
-                    appointment_date__range=[start_date, end_date]
-                ).select_related('patient__user', 'doctor__user').order_by('appointment_date')
-                context.update({
-                    'report_title': 'Appointments Report',
-                    'appointments': queryset,
-                    'total_count': queryset.count(),
-                    'status_counts': queryset.values('status').annotate(count=Count('id')).order_by('status')
-                })
-                return render(request, 'appointment_report.html', context)
-            
-            elif report_type == 'payments':
-                queryset = Payment.objects.filter(
-                    payment_date__date__range=[start_date, end_date],
-                    payment_status='completed'
-                ).select_related('patient__user').order_by('payment_date')
-                context.update({
-                    'report_title': 'Payments Report',
-                    'payments': queryset,
-                    'total_count': queryset.count(),
-                    'total_amount': queryset.aggregate(total=Sum('amount'))['total'] or 0
-                })
-                return render(request, 'payment_report.html', context)
-
-    else:
+    # This block handles showing the initial form page
+    if request.method != 'POST' and not request.GET.get('report_type'):
         form = ReportGenerationForm()
+        return render(request, 'generate_report.html', {'form': form})
+
+    # This block handles generating the report from the POST form OR
+    # filtering an existing report from the GET search form
     
-    return render(request, 'generate_report.html', {'form': form})
+    # Get all criteria from either the POST or GET request
+    report_type = request.POST.get('report_type') or request.GET.get('report_type')
+    date_range = request.POST.get('date_range') or request.GET.get('date_range')
+    start_date_str = request.POST.get('start_date') or request.GET.get('start_date')
+    end_date_str = request.POST.get('end_date') or request.GET.get('end_date')
+    
+    # Your existing logic for determining the date range
+    try:
+        if date_range == 'custom':
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        else:
+            today = timezone.now().date()
+            if date_range == 'today': start_date, end_date = today, today
+            elif date_range == 'this_week': start_date, end_date = today - timedelta(days=today.weekday()), today
+            elif date_range == 'this_month': start_date, end_date = today.replace(day=1), today
+            elif date_range == 'this_year': start_date, end_date = today.replace(month=1, day=1), today
+    except (ValueError, TypeError):
+        messages.error(request, "Invalid date format provided.")
+        return redirect('generate_report')
+    
+    # Prepare the context that will be passed to the report template
+    context = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'report_type': report_type, # Pass these to be used in the filter form's hidden fields
+        'date_range': date_range,
+    }
 
-# Placeholder views for unimplemented functionality, to avoid errors
-@login_required
-def create_medical_record(request, patient_id=None): return HttpResponse("Not Implemented")
+    # Get the search query from the URL
+    search_query = request.GET.get('q', '')
+    context['search_query'] = search_query
 
+    # Generate the appropriate report
+    if report_type == 'appointments':
+        queryset = Appointment.objects.filter(
+            appointment_date__range=[start_date, end_date]
+        ).select_related('patient__user', 'doctor__user').order_by('appointment_date')
+        
+        # ==========================================================
+        # --- SEARCH FUNCTIONALITY ADDED HERE ---
+        # ==========================================================
+        if search_query:
+            queryset = queryset.filter(
+                Q(patient__user__username__icontains=search_query) |
+                Q(doctor__user__username__icontains=search_query) |
+                Q(appointment_number__icontains=search_query)
+            ).distinct()
+        # ==========================================================
+            
+        context.update({
+            'report_title': 'Appointments Report',
+            'appointments': queryset,
+            'total_count': queryset.count(),
+        })
+        return render(request, 'appointment_report.html', context)
+            
+    elif report_type == 'payments':
+        queryset = Payment.objects.filter(
+            payment_date__date__range=[start_date, end_date],
+            payment_status='completed'
+        ).select_related('patient__user').order_by('payment_date')
+
+        # ==========================================================
+        # --- SEARCH FUNCTIONALITY ADDED HERE ---
+        # ==========================================================
+        if search_query:
+            queryset = queryset.filter(
+                Q(patient__user__username__icontains=search_query) |
+                Q(invoice_number__icontains=search_query) |
+                Q(transaction_id__icontains=search_query)
+            ).distinct()
+        # ==========================================================
+
+        context.update({
+            'report_title': 'Payments Report',
+            'payments': queryset,
+            'total_count': queryset.count(),
+            'total_amount': queryset.aggregate(total=Sum('amount'))['total'] or 0
+        })
+        return render(request, 'payment_report.html', context)
+    
+    # Fallback if the report type is somehow invalid
+    messages.error(request, "An unknown error occurred while generating the report.")
+    return redirect('generate_report')

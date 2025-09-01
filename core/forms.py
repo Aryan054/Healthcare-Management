@@ -389,7 +389,6 @@ class TimeSlotSelectionForm(Form):
 class ReportGenerationForm(Form):
     REPORT_TYPE_CHOICES = [
         ('appointments', 'Appointments Report'),
-        ('patients', 'Patients Report'),
         ('payments', 'Payments Report'),
     ]
     

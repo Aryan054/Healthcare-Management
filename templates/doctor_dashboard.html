@@ -62,8 +62,8 @@
                     <h4 class="mb-0">Quick Stats</h4>
                 </div>
                 <div class="card-body text-center">
-                    <h3 class="display-4">{{ patient_count }}</h3>
-                    <p class="lead">Total Patients</p>
+                    <div class="display-4 fw-bold">{{ patient_count }}</div>
+                    <p class="lead text-muted">Total Unique Patients</p>
                 </div>
             </div>
 
@@ -74,15 +74,19 @@
                 </div>
                  <div class="list-group list-group-flush">
                     <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Update Professional Profile</a>
+                    <a href="{% url 'manage_availability' %}" class="list-group-item list-group-item-action">Manage Availability</a>
                     
                     <!-- 
-                    =================================================
-                    THE FIX IS HERE:
-                    The href attribute now correctly points to the
-                    URL named 'manage_availability'.
-                    =================================================
+                    =============================================
+                    NEW NOTIFICATION LINK IS ADDED HERE
+                    =============================================
                     -->
-                    <a href="{% url 'manage_availability' %}" class="list-group-item list-group-item-action">Manage Availability</a>
+                    <a href="{% url 'notification_list' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        Notifications
+                        {% if unread_notifications_count > 0 %}
+                            <span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>
+                        {% endif %}
+                    </a>
                 </div>
             </div>
         </div>

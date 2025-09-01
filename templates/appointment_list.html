@@ -4,13 +4,15 @@
 {% block content %}
 <div class="container mt-5">
   <h2 class="text-center mb-4">📅 Your Appointments</h2>
-
+ <form method="get">
+        <input type="text" name="q" placeholder="Search..." value="{{ search_query|default:'' }}">
+        <button type="submit">Search</button>
+    </form>
   <div class="card shadow-lg border-0 rounded-3">
     <div class="card-body">
       <table class="table table-hover align-middle">
         <thead class="table-dark">
           <tr>
-            <th>ID</th>
             <th>Doctor</th>
             <th>Patient</th>
             <th>Date</th>
@@ -22,7 +24,6 @@
         <tbody>
           {% for appointment in appointments %}
           <tr>
-            <td>{{ appointment.id }}</td>
 
             <!-- Doctor name -->
             <td>{{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}</td>
@@ -34,7 +35,7 @@
             <td>{{ appointment.appointment_date }}</td>
 
             <!-- Time -->
-              <td>{{ appointment.appointment_time }}</td>
+            <td>{{ appointment.appointment_time }}</td>
 
             <!-- Status -->
             <td>
@@ -52,12 +53,22 @@
             <!-- Actions -->
             <td>
               <a href="{% url 'appointment_detail' appointment.id %}" class="btn btn-sm btn-outline-info">View</a>
+              <a href="{% url 'create_medical_record' appointment_id=appointment.id %}" class="btn btn-sm btn-primary">Create Medical Record</a>
             </td>
+
           </tr>
+
           {% empty %}
           <tr>
-            <td colspan="7" class="text-center text-muted">No appointments found.</td>
+            <td colspan="5">
+                        {% if search_query %}
+                            No appointments found matching your search.
+                        {% else %}
+                            No appointments found.
+                        {% endif %}
+                    </td>
           </tr>
+
           {% endfor %}
         </tbody>
       </table>

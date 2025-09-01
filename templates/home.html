@@ -1,33 +1,119 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Welcome to HealthSystem{% endblock %}
+{% block title %}Welcome to HealthSystem - Your Trusted Healthcare Partner{% endblock %}
 
 {% block content %}
-<div class="p-5 mb-4 bg-light rounded-3 text-center">
-    <div class="container-fluid py-5">
-        <h1 class="display-5 fw-bold">Your Health, Our Priority</h1>
-        <p class="fs-4">Seamlessly connect with trusted doctors, manage your medical records, and book appointments with ease. Your complete healthcare solution is just one click away.</p>
-        {% if user.is_authenticated %}
-            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
-        {% else %}
-            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Get Started</a>
-            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg">Login</a>
-        {% endif %}
+<!-- ======================= -->
+<!-- HERO SECTION -->
+<!-- ======================= -->
+<div class="container col-xxl-8 px-4 py-5">
+    <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+        <div class="col-10 col-sm-8 col-lg-6">
+            <!-- Replace with a professional hospital/doctor image -->
+            <img src="{% static 'images/hero-image.jpg' %}" class="d-block mx-lg-auto img-fluid rounded shadow-lg" alt="Doctors collaborating" width="700" height="500" loading="lazy">
+        </div>
+        <div class="col-lg-6">
+            <h1 class="display-5 fw-bold lh-1 mb-3">Exceptional Healthcare, One Click Away</h1>
+            <p class="lead">Connect with experienced doctors, manage your appointments, and access your medical records securely from anywhere. Your health journey, simplified.</p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg px-4 me-md-2">Go to Dashboard</a>
+                {% else %}
+                    <a href="{% url 'doctor_list' %}" class="btn btn-primary btn-lg px-4 me-md-2">Find a Doctor</a>
+                    <a href="{% url 'register' %}" class="btn btn-outline-secondary btn-lg px-4">Register Now</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="row text-center">
-    <div class="col-md-4">
-        <h3>Find Doctors</h3>
-        <p>Search for specialists and book appointments instantly.</p>
-    </div>
-    <div class="col-md-4">
-        <h3>Manage Records</h3>
-        <p>Keep all your medical history safe and accessible.</p>
-    </div>
-    <div class="col-md-4">
-        <h3>Stay Notified</h3>
-        <p>Get reminders for your upcoming appointments.</p>
+<!-- ======================= -->
+<!-- FEATURES/SERVICES SECTION -->
+<!-- ======================= -->
+<div class="container px-4 py-5" id="featured-3">
+    <h2 class="pb-2 border-bottom text-center">Our Core Services</h2>
+    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+        <div class="feature col text-center">
+            <div class="feature-icon bg-primary bg-gradient text-white fs-2 mb-3 mx-auto" style="width: 4rem; height: 4rem; line-height: 4rem; border-radius: .75rem;">
+                <i class="fas fa-user-md"></i> <!-- Font Awesome Icon -->
+            </div>
+            <h2>Expert Doctors</h2>
+            <p>Search from a network of board-certified specialists across various fields. View detailed profiles, ratings, and reviews to make an informed choice.</p>
+            <a href="{% url 'doctor_list' %}" class="icon-link">
+                Browse Specialists
+            </a>
+        </div>
+        <div class="feature col text-center">
+            <div class="feature-icon bg-primary bg-gradient text-white fs-2 mb-3 mx-auto" style="width: 4rem; height: 4rem; line-height: 4rem; border-radius: .75rem;">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <h2>Easy Scheduling</h2>
+            <p>Check real-time doctor availability and book your appointment in just a few clicks. Reschedule or manage your bookings effortlessly from your dashboard.</p>
+             <a href="{% url 'appointment_list' %}" class="icon-link">
+                Manage Appointments
+            </a>
+        </div>
+        <div class="feature col text-center">
+            <div class="feature-icon bg-primary bg-gradient text-white fs-2 mb-3 mx-auto" style="width: 4rem; height: 4rem; line-height: 4rem; border-radius: .75rem;">
+                <i class="fas fa-file-medical"></i>
+            </div>
+            <h2>Secure Records</h2>
+            <p>Access your complete medical history, prescriptions, and lab reports in one secure place. Share your records with your doctor at your discretion.</p>
+             <a href="{% url 'medical_record_list' %}" class="icon-link">
+                View Your Records
+            </a>
+        </div>
     </div>
 </div>
+
+<!-- ======================= -->
+<!-- HOW IT WORKS SECTION -->
+<!-- ======================= -->
+<div class="bg-light py-5">
+    <div class="container px-4 py-5">
+        <h2 class="text-center mb-5">Your Health Journey in 3 Simple Steps</h2>
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="display-4 text-primary mb-3">1</div>
+                <h4>Find Your Doctor</h4>
+                <p>Filter by specialty and location to find the perfect healthcare provider for your needs.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="display-4 text-primary mb-3">2</div>
+                <h4>Book a Slot</h4>
+                <p>View the doctor's live calendar and select a date and time that works for you.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="display-4 text-primary mb-3">3</div>
+                <h4>Get Consultation</h4>
+                <p>Attend your appointment and receive expert medical advice and treatment plans.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= -->
+<!-- CALL TO ACTION SECTION -->
+<!-- ======================= -->
+<div class="container my-5">
+    <div class="row p-4 pb-0 pe-lg-0 pt-lg-5 align-items-center rounded-3 border shadow-lg">
+        <div class="col-lg-7 p-3 p-lg-5 pt-lg-3">
+            <h1 class="display-4 fw-bold lh-1">Ready to Take Control of Your Health?</h1>
+            <p class="lead">Join our community today to get access to top-tier medical professionals and manage your healthcare with ease and confidence. Registration is free and takes less than a minute.</p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4 mb-lg-3">
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg px-4 me-md-2 fw-bold">Sign Up Now</a>
+                <a href="#" class="btn btn-outline-secondary btn-lg px-4">Contact Us</a>
+            </div>
+        </div>
+        <div class="col-lg-4 offset-lg-1 p-0 overflow-hidden shadow-lg">
+            <!-- Another relevant image -->
+            <img class="rounded-lg-3" src="{% static 'images/cta-image.jpg' %}" alt="Patient consulting with doctor" width="720">
+        </div>
+    </div>
+</div>
+
+<!-- Add Font Awesome for icons (optional but recommended for better UI) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
 {% endblock %}

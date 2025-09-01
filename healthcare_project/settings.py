@@ -1,14 +1,19 @@
+# In healthcare_project/settings.py
+
 import os
 from pathlib import Path
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = os.environ.get('SECRET_KEY')
-ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1']
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# SECRET_KEY is now back in the file for easy local development.
+SECRET_KEY = 'django-insecure-a-very-secret-key-for-local-development' # You can change this text
+
+# DEBUG is set to True for local development
+DEBUG = True
+
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -19,7 +24,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Our main application
     'core.apps.CoreConfig',
 ]
 
@@ -38,8 +42,8 @@ ROOT_URLCONF = 'healthcare_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # This correctly points to your local templates folder
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -54,20 +58,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'healthcare_project.wsgi.application'
 
-# Database
+
+# ==========================================================
+# --- DATABASE IS NOW BACK TO THE SIMPLE SQLITE VERSION ---
+# ==========================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# ==========================================================
 
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        conn_max_age=600,
-        conn_health_checks=True,
-        ssl_require=True, # Vercel Postgres requires SSL
-    )
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -85,13 +87,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-
-# This must match the "distDir" in vercel.json
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+# We don't need STATIC_ROOT for local development
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
@@ -107,8 +104,3 @@ AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
-
-ALLOWED_HOSTS = [
-    '127.0.0.1', 
-    '.vercel.app' # This will allow your main URL and all preview URLs
-]
