@@ -8,10 +8,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # SECRET_KEY is now back in the file for easy local development.
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY', 
+    'django-insecure-a-default-secret-key-for-local-development' # A fallback value
+)
 
 # DEBUG is set to True for local development
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 
 ALLOWED_HOSTS = []
