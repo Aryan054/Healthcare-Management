@@ -1,9 +1,13 @@
 #!/bin/bash
-set -e
 
+# Exit on error
+set -o errexit
+
+# Install dependencies
 pip install -r requirements.txt
 
+# Collect static files
 python manage.py collectstatic --no-input
 
-# THIS LINE IS ESSENTIAL FOR CREATING DATABASE TABLES
-python manage.py migrate
+# Apply database migrations (optional, but good for some setups)
+# python manage.py migrate
