@@ -3,15 +3,14 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Install all dependencies from requirements.txt
-pip install -r requirements.txt
+# First, upgrade pip using the correct Python module syntax to ensure we have the latest version
+python -m pip install --upgrade pip
+
+# Install all dependencies from requirements.txt using the correct Python module syntax
+python -m pip install -r requirements.txt
 
 # Run Django's collectstatic command to gather all static files
 python manage.py collectstatic --no-input
 
-# ==========================================================
-# --- THIS IS THE CRUCIAL FIX ---
-# This command creates all the necessary tables in your new
-# Vercel Postgres database.
-# ==========================================================
+# Run database migrations to create tables in the production database
 python manage.py migrate
