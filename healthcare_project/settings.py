@@ -1,6 +1,7 @@
 # In healthcare_project/settings.py
 
 import os
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -67,12 +68,22 @@ WSGI_APPLICATION = 'healthcare_project.wsgi.application'
 # --- DATABASE IS NOW BACK TO THE SIMPLE SQLITE VERSION ---
 # ==========================================================
 DATABASES = {
+    # This is the default database used for local development
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-# ==========================================================
+
+# This special environment variable is automatically set by Vercel
+# when you connect a database.
+if 'POSTGRES_URL' in os.environ:
+   
+    DATABASES['default'] = dj_database_url.config(
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=True, # Vercel Postgres requires a secure connection
+    ) 
 
 
 # Password validation
