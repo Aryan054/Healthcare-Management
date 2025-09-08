@@ -1,1 +1,8 @@
 
+{
+  "name": "healthcare-project",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "python manage.py migrate"
+  }
+}
