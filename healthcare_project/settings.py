@@ -19,6 +19,12 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 
 ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'healthcare-management-pied.vercel.app',
+    'healthcare-management-k8cvmxk9j-aryan054s-projects.vercel.app',
+    '127.0.0.1',
+    'localhost',
+]
 
 
 # Application definition
