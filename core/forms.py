@@ -117,7 +117,7 @@ class PatientProfileForm(ModelForm):
 # ==========================
 # Appointment Forms
 # ==========================
-# In core/forms.py
+
 
 class AppointmentForm(ModelForm):
     appointment_date = forms.DateField(

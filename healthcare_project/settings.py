@@ -18,13 +18,10 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 
-ALLOWED_HOSTS = []
-ALLOWED_HOSTS = [
-    'healthcare-management-pied.vercel.app',
-    'healthcare-management-k8cvmxk9j-aryan054s-projects.vercel.app',
-    '127.0.0.1',
-    'localhost',
-]
+ALLOWED_HOSTS = [ ".vercel.app",    # allows ALL Vercel preview URLs
+    "localhost",
+    "127.0.0.1",]
+
 
 
 # Application definition
