@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from core import views as core_views
@@ -9,7 +9,7 @@ urlpatterns = [
     # It's best practice to have it at the project level.
     
 
-    path("", core_views.home, name="home"),
+    path("", views.home, name="home"),
 
     # ==========================
     # Authentication URLs
