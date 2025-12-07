@@ -1,0 +1,27 @@
+name: Deploy Python App to Windows
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Windows via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.WIN_HOST }}
+        username: ${{ secrets.WIN_USER }}
+        password: ${{ secrets.WIN_PASSWORD }}
+        script: |
+          cd C:/projects/myproject
+          git pull origin main
+          mvenv\Scripts\activate
+          pip install -r requirements.txt
+          python manage.py migrate
