@@ -83,6 +83,13 @@ class DoctorAdmin(admin.ModelAdmin):
         result = obj.appointments.aggregate(avg_rating=Avg('review__rating'))
         return round(result['avg_rating'], 2) if result['avg_rating'] else 'N/A'
 
+    @admin.action(description='Approve selected doctors')
+    def approve_doctors(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} doctor(s) successfully approved.')
+
+    actions = [approve_doctors]
+
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(avg_rating=Avg('appointments__review__rating'))
 

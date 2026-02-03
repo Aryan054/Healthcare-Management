@@ -125,7 +125,7 @@ class Doctor(models.Model):
     available_days = models.CharField(max_length=50)  # e.g., "Mon,Tue,Wed,Fri"
     available_from = models.TimeField()
     available_to = models.TimeField()
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False) # Changed to False for manual verification
     education = models.TextField(default='', blank=True)
     languages = models.CharField(max_length=200, default="English")  # Comma-separated languages
     awards = models.TextField(blank=True, null=True)

@@ -379,7 +379,29 @@ def book_appointment(request, doctor_id):
             appointment.doctor = doctor
             appointment.save()
 
-            messages.success(request, f"Appointment booked with Dr. {doctor.user.get_full_name()}!")
+            # Fix 2: Email Notification
+            from django.core.mail import send_mail
+            try:
+                # Email to Patient
+                send_mail(
+                    subject=f"Appointment Confirmed: {appointment.appointment_number}",
+                    message=f"Dear {patient.user.first_name},\n\nYour appointment with Dr. {doctor.user.get_full_name()} is confirmed for {appointment.appointment_date} at {appointment.appointment_time}.\n\nThank you.",
+                    from_email=None, # Uses DEFAULT_FROM_EMAIL
+                    recipient_list=[patient.user.email],
+                    fail_silently=True,
+                )
+                # Email to Doctor
+                send_mail(
+                    subject=f"New Appointment: {patient.user.get_full_name()}",
+                    message=f"Dr. {doctor.user.last_name},\n\nYou have a new appointment with {patient.user.get_full_name()} on {appointment.appointment_date} at {appointment.appointment_time}.",
+                    from_email=None,
+                    recipient_list=[doctor.user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                logger.error(f"Failed to send email: {e}")
+
+            messages.success(request, f"Appointment booked with Dr. {doctor.user.get_full_name()}! Confirmation email sent.")
             return redirect('appointment_detail', pk=appointment.id)
     else:
         form = AppointmentForm(initial={'doctor': doctor})

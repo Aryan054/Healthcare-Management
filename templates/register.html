@@ -3,114 +3,196 @@
 {% block title %}Create an Account{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-7">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h2 class="card-title text-center mb-4">Create Your Account</h2>
+<style>
+    .auth-container {
+        min-height: 85vh;
+        display: flex;
+        align-items: stretch;
+        background: #fff;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
 
-                <form method="post">
-                    {% csrf_token %}
+    .auth-image-reg {
+        flex: 1;
+        background: url('https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1489&q=80') center/cover no-repeat;
+        position: relative;
+        order: 2;
+        /* Image on right for registration */
+    }
 
-                    <!-- Display General Form Errors (e.g., "Passwords don't match") -->
-                    {% if form.non_field_errors %}
+    .auth-image-reg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.8), rgba(32, 201, 151, 0.4));
+    }
+
+    .auth-content {
+        flex: 1;
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-width: 600px;
+        order: 1;
+    }
+
+    .auth-image-text {
+        position: absolute;
+        bottom: 2rem;
+        right: 2rem;
+        text-align: right;
+        color: white;
+        z-index: 10;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-control {
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border: 1px solid #e1e1e1;
+    }
+
+    .form-control:focus {
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        border-color: #28a745;
+    }
+
+    .btn-primary {
+        background-color: #28a745;
+        /* Green for Register */
+        border-color: #28a745;
+    }
+
+    .btn-primary:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    @media (max-width: 991px) {
+        .auth-container {
+            flex-direction: column;
+        }
+
+        .auth-image-reg {
+            order: 0;
+            height: 200px;
+            flex: none;
+        }
+
+        .auth-content {
+            order: 1;
+            padding: 2rem;
+        }
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="auth-container">
+                <div class="auth-image-reg d-none d-lg-block">
+                    <div class="auth-image-text">
+                        <h3>Join Our Community</h3>
+                        <p class="mb-0">Start your health journey today.</p>
+                    </div>
+                </div>
+
+                <div class="auth-content">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold">Create Account</h2>
+                        <p class="text-muted">Register to book appointments</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            {% load socialaccount %}
+                            <a href="{% provider_login_url 'google' %}" class="btn btn-google w-100 py-2">
+                                <i class="fab fa-google fa-lg"></i>
+                                <span class="ms-2">Sign up with Google</span>
+                            </a>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <hr class="flex-grow-1 my-0">
+                            <span class="px-3 text-muted bg-white">or email</span>
+                            <hr class="flex-grow-1 my-0">
+                        </div>
+
+                        <!-- Display General Form Errors -->
+                        {% if form.non_field_errors %}
                         <div class="alert alert-danger" role="alert">
                             {% for error in form.non_field_errors %}
-                                <p class="mb-0">{{ error }}</p>
+                            <small>{{ error }}</small>
                             {% endfor %}
                         </div>
-                    {% endif %}
+                        {% endif %}
 
-                    <!-- Username Field -->
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                        {{ form.username }}
-                        {% if form.username.help_text %}
-                            <div class="form-text">{{ form.username.help_text }}</div>
-                        {% endif %}
-                        {% if form.username.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.username.errors %}
-                                    {{ error }}
-                                {% endfor %}
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small fw-bold text-muted">Username</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}
+                                </div>{% endif %}
                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Email Field -->
-                    <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                        {{ form.email }}
-                        {% if form.email.help_text %}
-                            <div class="form-text">{{ form.email.help_text }}</div>
-                        {% endif %}
-                        {% if form.email.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.email.errors %}
-                                    {{ error }}
-                                {% endfor %}
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small fw-bold text-muted">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Password Fields -->
-                    <div class="mb-3">
-                        <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
-                        {{ form.password1 }}
-                        {% if form.password1.help_text %}
-                            <div class="form-text">{{ form.password1.help_text|safe }}</div>
-                        {% endif %}
-                        {% if form.password1.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.password1.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
-                        {{ form.password2 }}
-                        {% if form.password2.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.password2.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Role Selection -->
-                    <div class="mb-4">
-                        <label class="form-label d-block">Register as a:</label>
-                        {% for radio in form.role %}
-                        <div class="form-check form-check-inline">
-                            {{ radio.tag }}
-                            <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                {{ radio.choice_label }}
-                            </label>
                         </div>
-                        {% endfor %}
-                        {% if form.role.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.role.errors %}
-                                    {{ error }}
+
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small fw-bold text-muted">Password</label>
+                                {{ form.password1 }}
+                                {% if form.password1.help_text %}
+                                <div class="form-text small" style="font-size: 0.7em;">{{
+                                    form.password1.help_text|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small fw-bold text-muted">Confirm</label>
+                                {{ form.password2 }}
+                            </div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="mb-4">
+                            <label class="d-block small fw-bold text-muted mb-2">I am a:</label>
+                            <div class="d-flex gap-3">
+                                {% for radio in form.role %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
                                 {% endfor %}
                             </div>
-                        {% endif %}
-                    </div>
+                        </div>
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">Register</button>
-                    </div>
-                </form>
+                        <div class="d-grid mt-2">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm">Register</button>
+                        </div>
+                    </form>
 
-                <p class="text-center mt-3">
-                    Already have an account? <a href="{% url 'login' %}">Login here</a>.
-                </p>
+                    <div class="text-center mt-3">
+                        <span class="text-muted">Already have an account?</span>
+                        <a href="{% url 'login' %}" class="fw-bold text-decoration-none text-success">Login here</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-

@@ -14,6 +14,15 @@ SECRET_KEY = os.environ.get(
     'django-insecure-a-default-secret-key-for-local-development' # A fallback value
 )
 
+# Email Configuration (Console Backend for Development)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = 'noreply@healthcare.local'
+
 # DEBUG is set to True for local development
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
@@ -33,16 +42,23 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core.apps.CoreConfig',
+    'django.contrib.sites',  # Required by allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Add after SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware", # Add allauth middleware
 ]
 
 ROOT_URLCONF = 'healthcare_project.urls'
@@ -106,7 +122,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-# We don't need STATIC_ROOT for local development
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Required for Whitenoise / Production
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
@@ -122,3 +138,37 @@ AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
+
+# django-allauth configuration
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        # Configured via Django Admin (Social Applications)
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+# Additional allauth settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_VERIFICATION = 'optional' 
+LOGIN_REDIRECT_URL = 'dashboard'
+SOCIALACCOUNT_LOGIN_ON_GET = True # Skip the confirmation page by default
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http' # Crucial for local development to avoid https redirects
+ACCOUNT_LOGOUT_ON_GET = True # Skip logout confirmation
+SOCIALACCOUNT_AUTO_SIGNUP = True # auto-signup social users

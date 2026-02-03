@@ -1,91 +1,249 @@
 {% extends 'base.html' %}
-{% load static %} <!-- Required for the default avatar image -->
+{% load static %}
 
 {% block title %}Doctor Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #20c997, #0f7d5c);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
 
-    <!-- Doctor Welcome Header -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body p-4 d-flex align-items-center">
-            <!-- Profile Picture -->
-            {% if request.user.profile.profile_picture %}
-                <img src="{{ request.user.profile.profile_picture.url }}" alt="Dr. {{ request.user.get_full_name }}" class="rounded-circle me-4" style="width: 100px; height: 100px; object-fit: cover;">
-            {% else %}
-                <img src="{% static 'images/default_avatar.png' %}" alt="Default Avatar" class="rounded-circle me-4" style="width: 100px; height: 100px; object-fit: cover;">
-            {% endif %}
-            
-            <!-- Welcome Message and Details -->
+    .profile-img-lg {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.3s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-btn {
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s;
+    }
+
+    .action-btn:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .table-custom {
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+
+    .table-custom tr td,
+    .table-custom tr th {
+        border: none;
+        vertical-align: middle;
+    }
+
+    .table-custom tr {
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s;
+    }
+
+    .table-custom tbody tr:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-custom td:first-child {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }
+
+    .table-custom td:last-child {
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+</style>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div class="container">
+        <div class="d-flex align-items-center flex-wrap">
+            <div class="me-4 mb-3 mb-md-0">
+                {% if request.user.profile.profile_picture %}
+                <img src="{{ request.user.profile.profile_picture.url }}" alt="{{ request.user.get_full_name }}"
+                    class="rounded-circle profile-img-lg">
+                {% else %}
+                <img src="{% static 'images/default_avatar.png' %}" alt="Default Avatar"
+                    class="rounded-circle profile-img-lg bg-white">
+                {% endif %}
+            </div>
             <div>
-                <h2 class="mb-1">Welcome, Dr. {{ request.user.get_full_name|default:request.user.username }}!</h2>
-                <p class="text-muted mb-0">Here is your dashboard for today. Manage your patients and schedule from here.</p>
+                <h1 class="fw-bold mb-1">Dr. {{ request.user.last_name|default:request.user.username }}</h1>
+                <p class="mb-0 opacity-75">Have a productive day! You have {{ today_appointments.count }} appointments
+                    today.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+
+    <!-- STATS ROW -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="card-body d-flex align-items-center">
+                    <div class="bg-primary text-white rounded-circle p-3 me-3">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0">{{ patient_count }}</h3>
+                        <p class="text-muted mb-0">Total Patients</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="card-body d-flex align-items-center">
+                    <div class="bg-success text-white rounded-circle p-3 me-3">
+                        <i class="fas fa-calendar-check fa-2x"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0">{{ today_appointments.count }}</h3>
+                        <p class="text-muted mb-0">Today's Visits</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="card-body d-flex align-items-center">
+                    <div class="bg-warning text-white rounded-circle p-3 me-3">
+                        <i class="fas fa-bell fa-2x"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0">{{ unread_notifications_count }}</h3>
+                        <p class="text-muted mb-0">New Alerts</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Main Column: Appointments -->
-        <div class="col-lg-8 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Today's Appointments</h4>
-                </div>
-                <div class="card-body">
-                    {% if today_appointments %}
-                        <ul class="list-group list-group-flush">
-                            {% for appt in today_appointments %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                                    <div>
-                                        <strong>{{ appt.patient.user.get_full_name }}</strong> at {{ appt.appointment_time|time:"g:i A" }}
-                                        <br><small class="text-muted">Status: {{ appt.get_status_display }}</small>
-                                    </div>
-                                    <a href="{% url 'appointment_detail' appt.pk %}" class="btn btn-sm btn-outline-primary mt-2 mt-md-0">View Details</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-center p-3">You have no appointments scheduled for today.</p>
-                    {% endif %}
-                </div>
-                <div class="card-footer bg-light text-center">
-                     <a href="{% url 'appointment_list' %}" class="btn btn-secondary">View All Appointments</a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Side Column: Stats & Actions -->
-        <div class="col-lg-4 mb-4">
-            <!-- Quick Stats Card -->
-            <div class="card shadow-sm mb-4">
-                 <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Quick Stats</h4>
-                </div>
-                <div class="card-body text-center">
-                    <div class="display-4 fw-bold">{{ patient_count }}</div>
-                    <p class="lead text-muted">Total Unique Patients</p>
-                </div>
+    <div class="row g-4">
+        <!-- LEFT COLUMN: APPOINTMENTS -->
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-dark mb-0"><i class="fas fa-clipboard-list text-primary me-2"></i>Today's
+                    Schedule</h4>
+                <a href="{% url 'appointment_list' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View
+                    Calendar</a>
             </div>
 
-            <!-- Quick Actions Card -->
-            <div class="card shadow-sm">
-                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Quick Actions</h4>
+            {% if today_appointments %}
+            <div class="table-responsive">
+                <table class="table table-custom table-borderless">
+                    <thead>
+                        <tr class="text-muted text-uppercase small">
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in today_appointments %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ appt.appointment_time|time:"g:i A" }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded-circle px-2 py-1 me-2 text-primary fw-bold">
+                                        {{ appt.patient.user.first_name|slice:":1" }}
+                                    </div>
+                                    {{ appt.patient.user.get_full_name }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                        {% if appt.status == 'confirmed' %}bg-success
+                                        {% elif appt.status == 'pending' %}bg-warning text-dark
+                                        {% else %}bg-secondary{% endif %}">
+                                    {{ appt.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'appointment_detail' appt.pk %}"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="card shadow-sm border-0 bg-light text-center p-5 rounded-3">
+                <div class="text-muted mb-3">
+                    <i class="fas fa-mug-hot fa-3x opacity-50"></i>
                 </div>
-                 <div class="list-group list-group-flush">
-                    <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Update Professional Profile</a>
-                    <a href="{% url 'manage_availability' %}" class="list-group-item list-group-item-action">Manage Availability</a>
-                    
-                    <!-- 
-                    =============================================
-                    NEW NOTIFICATION LINK IS ADDED HERE
-                    =============================================
-                    -->
-                    <a href="{% url 'notification_list' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        Notifications
-                        {% if unread_notifications_count > 0 %}
+                <h5>No appointments today</h5>
+                <p class="text-muted mb-0">Enjoy your free time, Doctor!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- RIGHT COLUMN: QUICK ACTIONS -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4 bg-white">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Management</h5>
+
+                    <a href="{% url 'manage_availability' %}" class="action-btn text-decoration-none text-dark mb-2">
+                        <span class="d-flex align-items-center">
+                            <span class="bg-primary text-white rounded p-2 me-3"><i class="far fa-clock"></i></span>
+                            <span class="fw-semibold">Edit Availability</span>
+                        </span>
+                        <i class="fas fa-chevron-right text-muted small"></i>
+                    </a>
+
+                    <a href="{% url 'profile' %}" class="action-btn text-decoration-none text-dark mb-2">
+                        <span class="d-flex align-items-center">
+                            <span class="bg-info text-white rounded p-2 me-3"><i class="fas fa-user-md"></i></span>
+                            <span class="fw-semibold">Doctor Profile</span>
+                        </span>
+                        <i class="fas fa-chevron-right text-muted small"></i>
+                    </a>
+
+                    <a href="{% url 'notification_list' %}" class="action-btn text-decoration-none text-dark mb-2">
+                        <div class="d-flex align-items-center w-100 justify-content-between">
+                            <span class="d-flex align-items-center">
+                                <span class="bg-danger text-white rounded p-2 me-3"><i
+                                        class="fas fa-exclamation-circle"></i></span>
+                                <span class="fw-semibold">Notifications</span>
+                            </span>
+                            {% if unread_notifications_count > 0 %}
                             <span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>
-                        {% endif %}
+                            {% endif %}
+                        </div>
                     </a>
                 </div>
             </div>
