@@ -27,7 +27,7 @@ DEFAULT_FROM_EMAIL = 'noreply@healthcare.local'
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 
-ALLOWED_HOSTS = [ ".vercel.app",    # allows ALL Vercel preview URLs
+ALLOWED_HOSTS = [ ".vercel.app", "Aryan054.pythonanywhere.com"   # allows ALL Vercel preview URLs
     "localhost",
     "127.0.0.1",]
 
