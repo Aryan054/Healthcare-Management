@@ -20,8 +20,7 @@ jobs:
         username: ${{ secrets.WIN_USER }}
         password: ${{ secrets.WIN_PASSWORD }}
         script: |
-          cd C:/projects/myproject
+          cd /d C:\projects\myproject
           git pull origin main
-          mvenv\Scripts\activate
-          pip install -r requirements.txt
-          python manage.py migrate
+          .\mvenv\Scripts\python.exe -m pip install -r requirements.txt
+          .\mvenv\Scripts\python.exe manage.py migrate
