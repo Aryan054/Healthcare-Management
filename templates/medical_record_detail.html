@@ -1,52 +1,175 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Medical Record Details{% endblock %}
+{% block title %}Report: {{ record.title }} - Healthcare{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Medical Record: {{ record.title }}</h2>
+<style>
+    .report-shell {
+        max-width: 900px;
+        margin: 3rem auto;
+        background: white;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+        border-radius: 20px;
+        overflow: hidden;
+    }
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Record Details</h4>
+    .report-watermark {
+        padding: 3rem;
+        background: #f8f9fa;
+        border-bottom: 5px solid #6610f2;
+    }
+
+    .report-body {
+        padding: 3.5rem;
+    }
+
+    .report-field {
+        margin-bottom: 2rem;
+    }
+
+    .field-label {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: #6c757d;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .field-value {
+        font-size: 1.1rem;
+        color: #212529;
+        line-height: 1.6;
+    }
+
+    .doctor-signature {
+        border-top: 1px solid #dee2e6;
+        padding-top: 2rem;
+        margin-top: 4rem;
+    }
+
+    .clinical-stamp {
+        width: 100px;
+        height: 100px;
+        border: 3px double #007bff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #007bff;
+        font-weight: 900;
+        text-transform: uppercase;
+        transform: rotate(-15deg);
+        opacity: 0.4;
+        font-size: 0.6rem;
+        text-align: center;
+        padding: 10px;
+    }
+</style>
+
+<div class="container">
+    <div class="report-shell">
+        <div class="report-watermark d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="text-primary fw-bold mb-1">CLINICAL SUMMARY REPORT</h6>
+                <h3 class="fw-bold mb-0">RID-{{ record.id|add:5000 }}</h3>
+            </div>
+            <div class="text-end">
+                <h2 class="fw-bold mb-0">Healthcare<span class="text-primary">App</span></h2>
+                <small class="text-muted">Generated on {{ record.created_at|date:"M d, Y" }}</small>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Patient:</strong> {{ record.patient.user.get_full_name }}</p>
-                    <p><strong>Doctor:</strong> Dr. {{ record.doctor.user.get_full_name }}</p>
-                    <p><strong>Record Type:</strong> {{ record.get_record_type_display }}</p>
+
+        <div class="report-body">
+            <div class="row mb-5">
+                <div class="col-6">
+                    <span class="field-label">Patient Name</span>
+                    <div class="field-value fw-bold fs-4">{{ record.patient.user.get_full_name }}</div>
+                    <small class="text-muted">Account ID: PT-{{ record.patient.id|add:1000 }}</small>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Date Created:</strong> {{ record.created_at }}</p>
-                    {% if record.appointment %}
-                    <p><strong>Associated Appointment:</strong> <a href="{% url 'appointment_detail' record.appointment.pk %}">#{{ record.appointment.appointment_number }}</a></p>
-                    {% endif %}
+                <div class="col-6 text-end">
+                    <span class="field-label">Assigned Consultant</span>
+                    <div class="field-value">Dr. {{ record.doctor.user.get_full_name }}</div>
+                    <div class="small text-primary">{{ record.doctor.specializations.first.name }}</div>
                 </div>
             </div>
-            <hr>
-            <div class="mt-3">
-                <h5>Symptoms</h5>
-                <p>{{ record.symptoms|linebreaksbr|default:"Not specified." }}</p>
 
-                <h5>Diagnosis</h5>
-                <p>{{ record.diagnosis|linebreaksbr|default:"Not specified." }}</p>
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="field-label">Record Type</span>
+                        <div class="fw-bold text-uppercase">{{ record.get_record_type_display }}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="field-label">Consultation ID</span>
+                        <div class="fw-bold">#{{ record.appointment.appointment_number|default:"Walk-in" }}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3">
+                        <span class="field-label">Issue Title</span>
+                        <div class="fw-bold">{{ record.title }}</div>
+                    </div>
+                </div>
+            </div>
 
-                <h5>Treatment</h5>
-                <p>{{ record.treatment|linebreaksbr|default:"Not specified." }}</p>
-                
-                <h5>Notes</h5>
-                <p>{{ record.notes|linebreaksbr|default:"None." }}</p>
+            <div class="report-field">
+                <span class="field-label">Presenting Symptoms</span>
+                <div class="field-value">{{ record.symptoms|linebreaksbr|default:"No subjective symptoms reported." }}
+                </div>
+            </div>
 
-                {% if record.document %}
-                <hr>
-                <h5>Attached Document</h5>
-                <p><a href="{{ record.document.url }}" target="_blank" class="btn btn-secondary">View Document</a></p>
-                {% endif %}
+            <div class="report-field">
+                <span class="field-label">Clinical Diagnosis</span>
+                <div class="field-value">{{ record.diagnosis|linebreaksbr|default:"Observational assessment pending." }}
+                </div>
+            </div>
+
+            <div class="report-field">
+                <span class="field-label">Treatment Plan / Prescription</span>
+                <div class="field-value p-3 bg-primary-subtle border-start border-primary border-4 rounded-end-3">
+                    {{ record.treatment|linebreaksbr|default:"Awaiting prescription details." }}
+                </div>
+            </div>
+
+            <div class="report-field">
+                <span class="field-label">Additional Physician Notes</span>
+                <div class="field-value italic text-muted small">{{ record.notes|default:"No additional notes provided
+                    by the doctor." }}</div>
+            </div>
+
+            {% if record.document %}
+            <div class="mt-4 p-4 border rounded-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
+                    <span class="fw-bold">Supporting Medical Document</span>
+                </div>
+                <a href="{{ record.document.url }}" target="_blank"
+                    class="btn btn-outline-primary rounded-pill">Download File</a>
+            </div>
+            {% endif %}
+
+            <div class="doctor-signature d-flex justify-content-between align-items-end">
+                <div>
+                    <div class="field-value fw-bold mb-0">Dr. {{ record.doctor.user.last_name }}</div>
+                    <small class="text-muted d-block">Electronically Signed</small>
+                    <small class="text-muted">Date: {{ record.created_at|date:"Y-m-d H:i" }}</small>
+                </div>
+                <div class="clinical-stamp">
+                    VERIFIED<br>CLINICAL<br>RECORD
+                </div>
             </div>
         </div>
-        <div class="card-footer bg-light">
-            <a href="{% url 'medical_record_list' %}" class="btn btn-outline-secondary">Back to All Records</a>
+
+        <div class="card-footer bg-light p-4 text-center">
+            <a href="{% url 'medical_record_list' %}" class="btn btn-link text-muted"><i
+                    class="fas fa-arrow-left me-2"></i>Back to Medical History</a>
+            <button class="btn btn-outline-secondary btn-sm ms-3" onclick="window.print()"><i
+                    class="fas fa-print me-2"></i>Print Report</button>
         </div>
     </div>
 </div>

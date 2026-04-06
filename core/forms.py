@@ -39,7 +39,13 @@ class CustomUserCreationForm(UserCreationForm):
 class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'role')
+        fields = ('username', 'email', 'first_name', 'last_name')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                field.widget.attrs.update({'class': 'form-control'})
 
 
 # ==========================
@@ -59,12 +65,19 @@ class ProfileForm(ModelForm):
             'address': forms.Textarea(attrs={'rows': 2}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.required = False
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                field.widget.attrs.update({'class': 'form-control'})
+
 
 class DoctorProfileForm(ModelForm):
     available_days = forms.MultipleChoiceField(
         choices=DoctorAvailability.DAY_CHOICES,
         widget=forms.CheckboxSelectMultiple,
-        required=True
+        required=False
     )
     
     class Meta:
@@ -81,7 +94,26 @@ class DoctorProfileForm(ModelForm):
             'education': forms.Textarea(attrs={'rows': 3}),
             'awards': forms.Textarea(attrs={'rows': 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.required = False
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect, forms.CheckboxSelectMultiple)):
+                field.widget.attrs.update({'class': 'form-control'})
+                
+        if self.instance and self.instance.pk and self.instance.available_days:
+            days = self.instance.available_days.split(',')
+            day_map = {v: str(k) for k, v in DoctorAvailability.DAY_CHOICES}
+            self.initial['available_days'] = [day_map.get(d.strip()) for d in days if d.strip() in day_map]
     
+    def clean_available_days(self):
+        data = self.cleaned_data.get('available_days')
+        if isinstance(data, list):
+            day_map = dict(DoctorAvailability.DAY_CHOICES)
+            return ",".join([day_map.get(int(d), str(d)) for d in data])
+        return data
+
     def clean(self):
         cleaned_data = super().clean()
         available_from = cleaned_data.get('available_from')
@@ -112,6 +144,13 @@ class PatientProfileForm(ModelForm):
             'allergies': forms.Textarea(attrs={'rows': 2}),
             'chronic_conditions': forms.Textarea(attrs={'rows': 2}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.required = False
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                field.widget.attrs.update({'class': 'form-control'})
 
 
 # ==========================
@@ -240,13 +279,9 @@ class MedicalRecordForm(ModelForm):
         self.patient = kwargs.pop('patient', None)
         self.doctor = kwargs.pop('doctor', None)
         super().__init__(*args, **kwargs)
-        
-        # These fields are not directly in the form but might be needed if they were
-        # if self.patient:
-        #     self.fields['patient'].initial = self.patient
-        # if self.doctor:
-        #     self.fields['doctor'].initial = self.doctor
-
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                field.widget.attrs.update({'class': 'form-control'})
 
 class PrescriptionForm(ModelForm):
     class Meta:
@@ -257,6 +292,12 @@ class PrescriptionForm(ModelForm):
             'instructions': forms.Textarea(attrs={'rows': 3}),
             'valid_until': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                field.widget.attrs.update({'class': 'form-control'})
     
     def clean_medicines(self):
         medicines = self.cleaned_data.get('medicines')
@@ -274,6 +315,12 @@ class ReviewForm(ModelForm):
         widgets = {
             'comment': forms.Textarea(attrs={'rows': 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                field.widget.attrs.update({'class': 'form-control'})
 
 
 # ==========================

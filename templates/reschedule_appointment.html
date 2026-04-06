@@ -1,18 +1,102 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Reschedule Appointment{% endblock %}
+{% block title %}Reschedule Appointment - Healthcare{% endblock %}
 
 {% block content %}
-<h2>Reschedule Appointment #{{ appointment.appointment_number }}</h2>
-<p>Select a new date and time for your appointment.</p>
-<div class="card">
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Confirm Reschedule</button>
-            <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-secondary">Cancel</a>
-        </form>
+<style>
+    .reschedule-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        padding: 2rem 0;
+    }
+
+    .reschedule-card {
+        max-width: 550px;
+        width: 100%;
+        border: none;
+        border-radius: 25px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .reschedule-header {
+        background: linear-gradient(135deg, #6610f2, #6f42c1);
+        color: white;
+        padding: 2.5rem;
+        text-align: center;
+    }
+
+    .form-floating>.form-control {
+        border-radius: 12px;
+    }
+
+    .btn-confirm {
+        background: #6610f2;
+        border: none;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+
+    .btn-confirm:hover {
+        background: #520dc2;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 16, 242, 0.3);
+    }
+</style>
+
+<div class="reschedule-container">
+    <div class="reschedule-card">
+        <div class="reschedule-header">
+            <div class="mb-3">
+                <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+            </div>
+            <h2 class="fw-bold mb-1">Reschedule Visit</h2>
+            <p class="mb-0 opacity-75">Update your slot for Appointment #{{ appointment.appointment_number }}</p>
+        </div>
+        <div class="card-body p-4 p-md-5 bg-white">
+            <div class="alert alert-info py-2 small mb-4">
+                <i class="fas fa-info-circle me-2"></i> Choosing a new time will notify Dr. {{
+                appointment.doctor.user.last_name }}.
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small text-uppercase">New Preferred Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i
+                                class="far fa-calendar text-primary"></i></span>
+                        {{ form.appointment_date }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted small text-uppercase">New Preferred Time</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i
+                                class="far fa-clock text-primary"></i></span>
+                        {{ form.appointment_time }}
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mt-5">
+                    <button type="submit" class="btn btn-primary btn-confirm text-white">
+                        Confirm Reschedule
+                    </button>
+                    <a href="{% url 'appointment_detail' appointment.pk %}"
+                        class="btn btn-link text-muted text-decoration-none">
+                        Keep current appointment
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

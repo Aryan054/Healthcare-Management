@@ -53,7 +53,8 @@ def get_or_create_doctor(user):
         'clinic_address': 'temp address',
         'available_days': '',
         'available_from': '09:00',
-        'available_to': '17:00'
+        'available_to': '17:00',
+        'is_active': True
     })
     return doctor
 
@@ -78,7 +79,6 @@ def register(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
             if user.role == "patient": get_or_create_patient(user)
             elif user.role == "doctor": get_or_create_doctor(user)
             messages.success(request, 'Registration successful! Please complete your profile.')
@@ -335,7 +335,34 @@ class DoctorListView(ListView):
         queryset = Doctor.objects.filter(is_active=True).select_related('user').annotate(avg_rating=Avg('appointments__review__rating'))
         form = DoctorSearchForm(self.request.GET)
         if form.is_valid():
-            pass
+            name = form.cleaned_data.get('name')
+            if name:
+                queryset = queryset.filter(
+                    Q(user__first_name__icontains=name) | 
+                    Q(user__last_name__icontains=name) | 
+                    Q(user__username__icontains=name)
+                )
+            
+            specialization = form.cleaned_data.get('specialization')
+            if specialization:
+                queryset = queryset.filter(specializations=specialization)
+                
+            min_experience = form.cleaned_data.get('min_experience')
+            if min_experience is not None:
+                queryset = queryset.filter(experience_years__gte=min_experience)
+                
+            max_fee = form.cleaned_data.get('max_fee')
+            if max_fee is not None:
+                queryset = queryset.filter(consultation_fee__lte=max_fee)
+                
+            available_date = form.cleaned_data.get('available_date')
+            if available_date:
+                day_of_week = available_date.weekday()
+                queryset = queryset.filter(
+                    availabilities__day_of_week=day_of_week,
+                    availabilities__is_available=True
+                ).distinct()
+                
         return queryset
     
     def get_context_data(self, **kwargs):

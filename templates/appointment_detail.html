@@ -1,178 +1,356 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Appointment #{{ appointment.appointment_number }}{% endblock %}
+{% block title %}Appointment Detail #{{ appointment.appointment_number }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Appointment Details</h2>
+<style>
+    .status-timeline {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin-bottom: 3rem;
+        padding: 0 1rem;
+    }
 
-    <div class="row">
-        <!-- ========================== -->
-        <!--   MAIN DETAILS COLUMN      -->
-        <!-- ========================== -->
-        <div class="col-lg-8 mb-4">
-            <!-- Appointment Info Card -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">#{{ appointment.appointment_number }}</h4>
-                    <span>{{ appointment.appointment_date|date:"F d, Y" }} at {{ appointment.appointment_time|time:"g:i A" }}</span>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Patient Details</h5>
-                            <p><strong>Name:</strong>  {% with patient_user=appointment.patient.user %}
-                        {{ patient_user.get_full_name|default:patient_user.username }}
-                    {% endwith %}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Doctor Details</h5>
-                            <p><strong>Name:</strong> Dr. {{ appointment.doctor.user.get_full_name }}</p>
-                            <p><strong>Specialty:</strong> {{ appointment.doctor.specialization.name|default:"Not Specified" }}</p>
-                        </div>
-                    </div>
-                    <hr>
-                    <h5>Appointment Info</h5>
-                    <p><strong>Reason for Visit:</strong> {{ appointment.reason|linebreaksbr|default:"Not provided" }}</p>
-                    <p>
-                        <strong>Appointment Status:</strong> 
-                        <span class="badge fs-6 {% if appointment.status == 'confirmed' %}bg-success{% elif appointment.status == 'pending' %}bg-warning text-dark{% elif appointment.status == 'completed' %}bg-primary{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
-                            {{ appointment.get_status_display }}
-                        </span>
-                    </p>
-                    <p>
-                        <strong>Payment Status:</strong> 
-                        <span class="badge fs-6 {% if appointment.payment_status == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                            {{ appointment.get_payment_status_display|capfirst }}
-                        </span>
-                    </p>
-                </div>
-                <div class="card-footer bg-light d-flex justify-content-between align-items-center">
-                    <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary">Back to Appointment List</a>
-                    
-                    <!-- Payment button for patient -->
-                    {% if user.role == 'patient' and appointment.payment_status != 'paid' and appointment.status != 'cancelled' %}
-                        <a href="{% url 'process_payment' appointment.id %}" class="btn btn-success">
-                            Pay Now (${{ appointment.doctor.consultation_fee|floatformat:2 }})
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
+    .status-timeline::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #e9ecef;
+        z-index: 1;
+    }
 
-            <!-- ============================================= -->
-            <!--   REVIEW SECTION (FOR PATIENTS ONLY)          -->
-            <!-- ============================================= -->
-            {% if user.role == 'patient' %}
-                <!-- If the 'can_review' flag from the view is True, show the form to leave a review -->
-                {% if can_review %}
-                <div class="card shadow-sm mt-4">
-                    <div class="card-header bg-info text-white"><h4 class="mb-0">Leave a Review</h4></div>
-                    <div class="card-body">
-                        <p>Your feedback helps other patients and is greatly appreciated. Please rate your experience with Dr. {{ appointment.doctor.user.last_name }}.</p>
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="{{ review_form.rating.id_for_label }}" class="form-label fw-bold">Overall Rating</label>
-                                {{ review_form.rating }}
-                                {% if review_form.rating.errors %}<div class="text-danger small mt-1">{{ review_form.rating.errors.as_text }}</div>{% endif %}
-                            </div>
-                            <div class="mb-3">
-                                <label for="{{ review_form.comment.id_for_label }}" class="form-label fw-bold">Comment (Optional)</label>
-                                {{ review_form.comment }}
-                            </div>
-                             <div class="form-check mb-3">
-                                {{ review_form.is_anonymous }}
-                                <label class="form-check-label" for="{{ review_form.is_anonymous.id_for_label }}">
-                                    Submit my review anonymously
-                                </label>
-                            </div>
-                            <button type="submit" name="submit_review" class="btn btn-primary">Submit Review</button>
-                        </form>
-                    </div>
+    .timeline-step {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        flex: 1;
+    }
+
+    .step-dot {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #fff;
+        border: 4px solid #e9ecef;
+        margin: 0 auto 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .timeline-step.active .step-dot {
+        border-color: #6610f2;
+        background: #6610f2;
+        box-shadow: 0 0 0 5px rgba(102, 16, 242, 0.2);
+    }
+
+    .timeline-step.completed .step-dot {
+        border-color: #28a745;
+        background: #28a745;
+    }
+
+    .step-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    .timeline-step.active .step-label {
+        color: #6610f2;
+    }
+
+    .timeline-step.completed .step-label {
+        color: #28a745;
+    }
+
+    .detail-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .detail-header {
+        background: #212529;
+        color: white;
+        padding: 2rem;
+    }
+
+    .info-section {
+        padding: 2rem;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .info-section:last-child {
+        border-bottom: none;
+    }
+
+    .section-icon {
+        width: 45px;
+        height: 45px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6610f2;
+        font-size: 1.25rem;
+        margin-right: 1.25rem;
+    }
+
+    .qr-placeholder {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+    }
+</style>
+
+<div class="container py-5">
+    <!-- Status Timeline -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="status-timeline">
+                <div
+                    class="timeline-step {% if appointment.status == 'Pending' %}active{% elif appointment.status != 'Cancelled' %}completed{% endif %}">
+                    <div class="step-dot"></div>
+                    <div class="step-label">Pending</div>
                 </div>
-                
-                <!-- If a review already exists for this appointment, display it instead -->
-                {% elif appointment.review %}
-                <div class="card shadow-sm mt-4">
-                    <div class="card-header"><h4 class="mb-0">Your Review</h4></div>
-                    <div class="card-body">
-                        <p><strong>Your Rating:</strong> 
-                            <span class="text-warning">
-                                {% for i in "12345" %}
-                                    {% if i|add:0 <= appointment.review.rating %}★{% else %}☆{% endif %}
-                                {% endfor %}
-                            </span>
-                            ({{ appointment.review.rating }} / 5)
-                        </p>
-                        <p><strong>Your Comment:</strong></p>
-                        <blockquote class="blockquote mb-0 bg-light p-3 rounded">
-                            <p class="mb-0">{{ appointment.review.comment|linebreaksbr|default:"No comment provided." }}</p>
-                        </blockquote>
-                    </div>
+                <div
+                    class="timeline-step {% if appointment.status == 'Confirmed' %}active{% elif appointment.status == 'Completed' %}completed{% endif %}">
+                    <div class="step-dot"></div>
+                    <div class="step-label">Confirmed</div>
+                </div>
+                <div
+                    class="timeline-step {% if appointment.status == 'In Progress' %}active{% elif appointment.status == 'Completed' %}completed{% endif %}">
+                    <div class="step-dot"></div>
+                    <div class="step-label">In Progress</div>
+                </div>
+                <div class="timeline-step {% if appointment.status == 'Completed' %}active{% endif %}">
+                    <div class="step-dot"></div>
+                    <div class="step-label">Completed</div>
+                </div>
+                {% if appointment.status == 'Cancelled' %}
+                <div class="timeline-step active">
+                    <div class="step-dot bg-danger border-danger"></div>
+                    <div class="step-label text-danger">Cancelled</div>
                 </div>
                 {% endif %}
-            {% endif %}
-
+            </div>
         </div>
+    </div>
 
-        <!-- ========================== -->
-        <!--   SIDE ACTIONS COLUMN      -->
-        <!-- ========================== -->
-        <div class="col-lg-4 mb-4">
-            <!-- Doctor Actions Card -->
-            {% if user.role == 'doctor' %}
-            <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
-                    <h4 class="mb-0">Doctor Actions</h4>
+    <div class="row">
+        <!-- Main Details -->
+        <div class="col-lg-8">
+            <div class="card detail-card mb-4">
+                <div class="detail-header">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-primary rounded-pill px-3">Appointment #{{ appointment.appointment_number }}</span>
+                        <span class="small opacity-75">Booked on {{ appointment.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <h2 class="fw-bold mb-0">{{ appointment.appointment_date|date:"l, F d, Y" }}</h2>
+                    <p class="mb-0 opacity-75"><i class="far fa-clock me-2"></i>{{ appointment.appointment_time|time:"g:i A" }} (approx. 30 mins)</p>
                 </div>
-                <div class="card-body">
-                    <!-- Action 1: Update Status -->
-                    <form method="post" class="mb-3">
+
+                <div class="card-body p-0">
+                    <!-- Visit Reason -->
+                    <div class="info-section">
+                        <div class="d-flex">
+                            <div class="section-icon"><i class="fas fa-notes-medical"></i></div>
+                            <div>
+                                <h5 class="fw-bold mb-2">Reason for Visit</h5>
+                                <p class="text-muted mb-0">{{ appointment.reason|default:"Routine consultation and follow-up." }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Participants -->
+                    <div class="info-section">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="section-icon"><i class="fas fa-user-md"></i></div>
+                                    <div>
+                                        <h6 class="fw-bold text-muted small text-uppercase mb-1">Practitioner</h6>
+                                        <h5 class="fw-bold mb-0">Dr. {{ appointment.doctor.user.get_full_name }}</h5>
+                                        <p class="text-primary small mb-0">{{ appointment.doctor.specializations.first.name }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="section-icon"><i class="fas fa-user-injured"></i></div>
+                                    <div>
+                                        <h6 class="fw-bold text-muted small text-uppercase mb-1">Patient</h6>
+                                        <h5 class="fw-bold mb-0">{{ appointment.patient.user.get_full_name|default:appointment.patient.user.username }}</h5>
+                                        <p class="text-muted small mb-0">ID: PT-{{ appointment.patient.id|add:1000 }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Info -->
+                    <div class="info-section bg-light-subtle">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex">
+                                <div class="section-icon bg-white"><i class="fas fa-wallet"></i></div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Billing & Payment</h5>
+                                    <p class="text-muted small mb-0">Consultation Fee: ${{ appointment.doctor.consultation_fee|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                            <div>
+                                {% if appointment.payment_status == 'paid' %}
+                                <span class="badge bg-success-light text-success px-3 py-2 rounded-pill"
+                                    style="background: #e6f4ea;">
+                                    <i class="fas fa-check-circle me-1"></i> Payment Received
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-light text-warning-dark px-3 py-2 rounded-pill"
+                                    style="background: #fff4e5;">
+                                    <i class="fas fa-clock me-1"></i> Payment Pending
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-0 p-4">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'appointment_list' %}" class="btn btn-link text-muted text-decoration-none">
+                            <i class="fas fa-arrow-left me-2"></i>Back to My List
+                        </a>
+                        <div class="d-flex gap-2">
+                            {% if request.user.role == 'patient' and appointment.status != 'Cancelled' and appointment.status != 'Completed' %}
+                            <a href="{% url 'reschedule_appointment' appointment.id %}"
+                                class="btn btn-outline-primary px-4 rounded-pill">Reschedule</a>
+                            {% endif %}
+                            {% if request.user.role == 'patient' and appointment.payment_status != 'paid' and appointment.status != 'Cancelled' %}
+                            <a href="{% url 'process_payment' appointment.id %}"
+                                class="btn btn-primary px-4 rounded-pill shadow-sm">Complete Payment</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Section for Patients -->
+            {% if user.role == 'patient' %}
+            {% if can_review %}
+            <div class="card detail-card mb-4 border-top border-primary border-5">
+                <div class="card-body p-4 p-md-5">
+                    <h4 class="fw-bold mb-3">Leave a Review</h4>
+                    <p class="text-muted mb-4">How was your visit with Dr. {{ appointment.doctor.user.last_name }}? Your
+                        feedback helps the community.</p>
+                    <form method="post">
                         {% csrf_token %}
-                        <label for="status-select" class="form-label"><strong>Update Status</strong></label>
-                        <div class="input-group">
-                            <select name="status" id="status-select" class="form-select">
-                                {% for key, value in status_choices %}
-                                    <option value="{{ key }}" {% if appointment.status == key %}selected{% endif %}>{{ value }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" name="update_status" class="btn btn-success">Update</button>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Rating</label>
+                                {{ review_form.rating }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Your Experience (Optional)</label>
+                                {{ review_form.comment }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch mt-2">
+                                    {{ review_form.is_anonymous }}
+                                    <label class="form-check-label ms-2"
+                                        for="{{ review_form.is_anonymous.id_for_label }}">Keep my profile
+                                        anonymous</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" name="submit_review"
+                                    class="btn btn-primary px-5 py-2 rounded-pill">Post Experience</button>
+                            </div>
                         </div>
                     </form>
+                </div>
+            </div>
+            {% elif appointment.review %}
+            <div class="card detail-card mb-4 bg-light shadow-none">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i>Your Feedback</h5>
+                    <div class="mb-2">
+                        {% for i in "12345" %}
+                        <i
+                            class="{% if i|add:0 <= appointment.review.rating %}fas text-warning{% else %}far text-muted{% endif %} fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <p class="mb-0 italic">"{{ appointment.review.comment|default:'No detailed comment provided.' }}"
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
 
-                    <hr>
-                    
-                    <!-- Action 2: Create or View Medical Record -->
-
-</div>
+        <!-- Sidebar Actions -->
+        <div class="col-lg-4">
+            <!-- Doctor-Specific Actions -->
+            {% if user.role == 'doctor' %}
+            <div class="card detail-card mb-4 border-0">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Manage Status</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <select name="status" class="form-select form-select-lg mb-3">
+                                {% for key, value in status_choices %}
+                                <option value="{{ key }}" {% if appointment.status == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" name="update_status"
+                                class="btn btn-success py-2 rounded-pill shadow-sm">Update Appointment</button>
+                        </div>
+                    </form>
+                    <hr class="my-4">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'create_medical_record' appointment_id=appointment.id %}"
+                            class="btn btn-outline-primary py-2 rounded-pill">Create Medical Record</a>
+                    </div>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Patient Actions Card -->
-            {% if user.role == 'patient' and appointment.status != 'completed' and appointment.status != 'cancelled' %}
-             <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
-                    <h4 class="mb-0">Patient Actions</h4>
-                </div>
-                <div class="card-body">
-                     <label class="form-label"><strong>Need to change the date?</strong></label>
-                     <div class="d-grid">
-                        <a href="{% url 'reschedule_appointment' appointment.id %}" class="btn btn-warning">Reschedule Appointment</a>
-                     </div>
+            <!-- Check-in QR (Simulated) -->
+            <div class="card detail-card mb-4">
+                <div class="card-body p-4 text-center">
+                    <h5 class="fw-bold mb-3">Check-in Pass</h5>
+                    <div class="qr-placeholder mb-3">
+                        <i class="fas fa-qrcode fa-6x text-muted opacity-50"></i>
+                        <p class="text-muted mt-3 mb-0 small">Show this at the clinic desk</p>
+                    </div>
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="fas fa-info-circle me-1"></i> Arrive 15 mins early
+                    </div>
                 </div>
             </div>
-            {% endif %}
 
+            <!-- Clinic Info -->
+            <div class="card detail-card bg-primary text-white">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Clinic Location</h5>
+                    <p class="small mb-4 opacity-75"><i class="fas fa-map-marker-alt me-2"></i>{{ appointment.doctor.clinic_address|default:"Premium Care Hospital, Medical District, Floor 4" }}</p>
+                    <div class="d-grid">
+                        <button class="btn btn-outline-light btn-sm rounded-pill">Get Directions</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<style>
-/* Style the rating select dropdown and textarea */
-select, textarea {
-    display: block; width: 100%; padding: .375rem .75rem; font-size: 1rem;
-    border: 1px solid #ced4da; border-radius: .25rem;
-}
-</style>
 {% endblock %}

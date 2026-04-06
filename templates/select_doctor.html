@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Select a Physician - Healthcare{% endblock %}
+
+{% block content %}
+<style>
+    .select-hero {
+        background: #fdfdfd;
+        padding: 4rem 0;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 3rem;
+    }
+
+    .doctor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .doctor-select-card {
+        border: 1px solid #eee;
+        border-radius: 20px;
+        background: white;
+        transition: all 0.3s;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .doctor-select-card:hover {
+        border-color: #6610f2;
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(102, 16, 242, 0.1);
+    }
+
+    .select-avatar {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-bottom: 1.5rem;
+        border: 3px solid #f8f9fa;
+    }
+
+    .btn-select {
+        background: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        border-radius: 50px;
+        padding: 0.5rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .doctor-select-card:hover .btn-select {
+        background: #6610f2;
+        color: white;
+        border-color: #6610f2;
+    }
+</style>
+
+<div class="select-hero">
+    <div class="container text-center">
+        <h1 class="fw-bold mb-2">Book Your Appointment</h1>
+        <p class="text-muted">Choose your preferred specialist to begin the scheduling process.</p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="doctor-grid">
+        {% for doctor in doctors %}
+        <div class="doctor-select-card">
+            {% if doctor.user.profile.profile_picture %}
+            <img src="{{ doctor.user.profile.profile_picture.url }}" class="select-avatar">
+            {% else %}
+            <img src="{% static 'images/default_avatar.png' %}" class="select-avatar bg-light">
+            {% endif %}
+
+            <h5 class="fw-bold mb-1">Dr. {{ doctor.user.get_full_name }}</h5>
+            <p class="text-primary small fw-bold mb-3">{{ doctor.specializations.first.name|default:"General Medicine"
+                }}</p>
+
+            <div class="d-flex justify-content-center gap-3 mb-4 small text-muted">
+                <span><i class="fas fa-history me-1"></i> {{ doctor.experience_years }}yrs</span>
+                <span>|</span>
+                <span><i class="fas fa-star text-warning me-1"></i> {{ doctor.average_rating|default:"New" }}</span>
+            </div>
+
+            <a href="{% url 'book_appointment' doctor.id %}" class="btn btn-select">Select Doctor</a>
+        </div>
+        {% empty %}
+        <div class="text-center py-5 w-100 grid-column-span-all">
+            <i class="fas fa-user-slash fa-4x text-muted opacity-25 mb-3"></i>
+            <h5>Physicians Unavailable</h5>
+            <p class="text-muted">We couldn't find any active doctors at the moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

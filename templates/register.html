@@ -155,20 +155,22 @@
                             <div class="col-md-6 mb-2">
                                 <label class="form-label small fw-bold text-muted">Password</label>
                                 {{ form.password1 }}
+                                {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors.0 }}</div>{% endif %}
                                 {% if form.password1.help_text %}
-                                <div class="form-text small" style="font-size: 0.7em;">{{
-                                    form.password1.help_text|striptags }}</div>
+                                <div class="form-text small" style="font-size: 0.7em;">{{ form.password1.help_text|striptags }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6 mb-2">
                                 <label class="form-label small fw-bold text-muted">Confirm</label>
                                 {{ form.password2 }}
+                                {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
                             </div>
                         </div>
 
                         <!-- Role Selection -->
                         <div class="mb-4">
                             <label class="d-block small fw-bold text-muted mb-2">I am a:</label>
+                            {% if form.role.errors %}<div class="text-danger small">{{ form.role.errors.0 }}</div>{% endif %}
                             <div class="d-flex gap-3">
                                 {% for radio in form.role %}
                                 <div class="form-check">

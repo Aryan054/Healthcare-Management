@@ -146,6 +146,26 @@ class Doctor(models.Model):
             raise ValidationError("Available 'from' time must be before 'to' time.")
 
     @property
+    def formatted_available_days(self):
+        if not self.available_days:
+            return ""
+        
+        # Handle cases where it might be saved as a list-string "['0', '1']"
+        import ast
+        try:
+            days_data = ast.literal_eval(self.available_days)
+            if isinstance(days_data, list):
+                day_map = dict(DoctorAvailability.DAY_CHOICES)
+                # Ensure they are integers if stored as strings
+                return ", ".join([day_map.get(int(d), str(d))[:3] for d in days_data])
+        except (ValueError, SyntaxError):
+            pass
+            
+        # If it's a normal comma-separated string like "Monday, Tuesday"
+        days = [d.strip()[:3] for d in self.available_days.split(',') if d.strip()]
+        return ", ".join(days)
+
+    @property
     def average_rating(self):
         from django.db.models import Avg
         return self.appointments.filter(review__isnull=False).aggregate(Avg('review__rating'))['review__rating__avg']

@@ -1,77 +1,166 @@
 {% extends 'base.html' %}
-{% block title %}Your Appointments{% endblock %}
+{% load static %}
+
+{% block title %}My Appointments - Healthcare{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-  <h2 class="text-center mb-4">📅 Your Appointments</h2>
- <form method="get">
-        <input type="text" name="q" placeholder="Search..." value="{{ search_query|default:'' }}">
-        <button type="submit">Search</button>
-    </form>
-  <div class="card shadow-lg border-0 rounded-3">
-    <div class="card-body">
-      <table class="table table-hover align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>Doctor</th>
-            <th>Patient</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for appointment in appointments %}
-          <tr>
+<style>
+  .page-header {
+    background: #f8f9fa;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #dee2e6;
+  }
 
-            <!-- Doctor name -->
-            <td>{{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}</td>
+  .table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: none;
+  }
 
-            <!-- Patient name -->
-            <td>{{ appointment.patient.user.get_full_name|default:appointment.patient.user.username }}</td>
+  .table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #6c757d;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1.25rem 1rem;
+  }
 
-            <!-- Date -->
-            <td>{{ appointment.appointment_date }}</td>
+  .table tbody td {
+    padding: 1.25rem 1rem;
+    vertical-align: middle;
+    border-color: #f1f3f5;
+  }
 
-            <!-- Time -->
-            <td>{{ appointment.appointment_time }}</td>
+  .doctor-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
 
-            <!-- Status -->
-            <td>
-              {% if appointment.status == 'Pending' %}
-                <span class="badge bg-warning text-dark">Pending</span>
-              {% elif appointment.status == 'Confirmed' %}
-                <span class="badge bg-success">Confirmed</span>
-              {% elif appointment.status == 'Cancelled' %}
-                <span class="badge bg-danger">Cancelled</span>
-              {% else %}
-                <span class="badge bg-secondary">{{ appointment.status }}</span>
-              {% endif %}
-            </td>
+  .doctor-avatar-sm {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 10px;
+  }
 
-            <!-- Actions -->
-            <td>
-              <a href="{% url 'appointment_detail' appointment.id %}" class="btn btn-sm btn-outline-info">View</a>
-              <a href="{% url 'create_medical_record' appointment_id=appointment.id %}" class="btn btn-sm btn-primary">Create Medical Record</a>
-            </td>
+  .badge-pill {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    display: inline-block;
+  }
 
-          </tr>
+  .search-box {
+    max-width: 400px;
+    border-radius: 50px;
+    padding-left: 1.5rem;
+    border: 1px solid #dee2e6;
+  }
 
-          {% empty %}
-          <tr>
-            <td colspan="5">
-                        {% if search_query %}
-                            No appointments found matching your search.
-                        {% else %}
-                            No appointments found.
-                        {% endif %}
-                    </td>
-          </tr>
+  .btn-detail {
+    border-radius: 50px;
+    padding: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+</style>
 
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="page-header">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div>
+      <h2 class="fw-bold mb-1">My Appointments</h2>
+      <p class="text-muted mb-0">Manage your visits and health consultations.</p>
+    </div>
+    <div class="d-none d-md-block">
+      <form method="get" class="d-flex">
+        <input type="text" name="q" class="form-control search-box" placeholder="Search appointments..."
+          value="{{ search_query|default:'' }}">
+        <button type="submit" class="btn btn-primary rounded-circle ms-2" style="width: 40px; height: 40px;">
+          <i class="fas fa-search"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="table-container shadow-sm border">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th scope="col" class="ps-4">Practitioner</th>
+                <th scope="col">Schedule</th>
+                <th scope="col">Reason</th>
+                <th scope="col" class="text-center">Status</th>
+                <th scope="col" class="text-end pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appointment in appointments %}
+              <tr>
+                <td class="ps-4">
+                  <div class="doctor-cell">
+                    {% if appointment.doctor.user.profile.profile_picture %}
+                    <img src="{{ appointment.doctor.user.profile.profile_picture.url }}" class="doctor-avatar-sm">
+                    {% else %}
+                    <div class="doctor-avatar-sm bg-light d-flex align-items-center justify-content-center">
+                      <i class="fas fa-user-md text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                      <h6 class="fw-bold mb-0">Dr. {{ appointment.doctor.user.get_full_name|default:appointment.doctor.user.username }}</h6>
+                      <small class="text-muted">{{ appointment.doctor.specializations.first.name|default:"General Physician" }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="fw-bold text-dark"><i class="far fa-calendar-alt me-2 text-primary"></i>{{ appointment.appointment_date|date:"D, M d, Y" }}</div>
+                  <div class="text-muted small"><i class="far fa-clock me-2"></i>{{ appointment.appointment_time|time:"g:i A" }}</div>
+                </td>
+                <td>
+                  <span class="text-muted small">{{ appointment.reason|truncatechars:40|default:"Routine consultation" }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge badge-pill 
+                    {% if appointment.status == 'Confirmed' %}bg-success-light text-success
+                    {% elif appointment.status == 'Pending' %}bg-warning-light text-warning-dark
+                    {% elif appointment.status == 'Cancelled' %}bg-danger-light text-danger
+                    {% else %}bg-primary-light text-primary{% endif %}"
+                    style="background-color: {% if appointment.status == 'Confirmed' %}#e6f4ea{% elif appointment.status == 'Pending' %}#fff4e5{% elif appointment.status == 'Cancelled' %}#fcebe9{% else %}#e7f1ff{% endif %};">
+                    {{ appointment.get_status_display }}
+                  </span>
+                </td>
+                <td class="text-end pe-4">
+                  <a href="{% url 'appointment_detail' appointment.id %}"
+                    class="btn btn-outline-primary btn-sm btn-detail">Details</a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="py-5 text-center">
+                  <div class="py-4">
+                    <i class="far fa-calendar-times fa-4x text-muted opacity-25 mb-3"></i>
+                    <h5>No appointments found</h5>
+                    <p class="text-muted">You have no scheduled visits at the moment.</p>
+                    <a href="{% url 'doctor_list' %}" class="btn btn-primary rounded-pill px-4 mt-2">Book New Appointment</a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
