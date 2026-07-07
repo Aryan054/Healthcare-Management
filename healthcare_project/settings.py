@@ -89,8 +89,13 @@ WSGI_APPLICATION = 'healthcare_project.wsgi.application'
 DATABASES = {
     # This is the default database used for local development
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'healthcare_db',
+        "USER": "postgres",
+        "PASSWORD": "12345",
+        "HOST": "localhost",
+        "PORT": "5432",
+
     }
 }
 
