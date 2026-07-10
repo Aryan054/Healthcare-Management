@@ -109,6 +109,30 @@
         padding: 2rem;
         text-align: center;
     }
+
+    .star-rating-input {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .star-rating-input input {
+        display: none;
+    }
+
+    .star-rating-input label {
+        font-size: 2rem;
+        color: #e4e5e9;
+        cursor: pointer;
+        transition: color 0.2s ease-in-out;
+    }
+
+    .star-rating-input input:checked ~ label,
+    .star-rating-input label:hover,
+    .star-rating-input label:hover ~ label {
+        color: #ffc107;
+    }
 </style>
 
 <div class="container py-5">
@@ -116,26 +140,23 @@
     <div class="row mb-5">
         <div class="col-lg-10 mx-auto">
             <div class="status-timeline">
-                <div
-                    class="timeline-step {% if appointment.status == 'Pending' %}active{% elif appointment.status != 'Cancelled' %}completed{% endif %}">
+                <div class="timeline-step {% if appointment.status == 'pending' or appointment.status == 'Pending' %}active{% elif appointment.status in 'confirmed,Confirmed,in_progress,In Progress,completed,Completed' %}completed{% endif %}">
                     <div class="step-dot"></div>
                     <div class="step-label">Pending</div>
                 </div>
-                <div
-                    class="timeline-step {% if appointment.status == 'Confirmed' %}active{% elif appointment.status == 'Completed' %}completed{% endif %}">
+                <div class="timeline-step {% if appointment.status == 'confirmed' or appointment.status == 'Confirmed' %}active{% elif appointment.status in 'in_progress,In Progress,completed,Completed' %}completed{% endif %}">
                     <div class="step-dot"></div>
                     <div class="step-label">Confirmed</div>
                 </div>
-                <div
-                    class="timeline-step {% if appointment.status == 'In Progress' %}active{% elif appointment.status == 'Completed' %}completed{% endif %}">
+                <div class="timeline-step {% if appointment.status == 'in_progress' or appointment.status == 'In Progress' %}active{% elif appointment.status == 'completed' or appointment.status == 'Completed' %}completed{% endif %}">
                     <div class="step-dot"></div>
                     <div class="step-label">In Progress</div>
                 </div>
-                <div class="timeline-step {% if appointment.status == 'Completed' %}active{% endif %}">
+                <div class="timeline-step {% if appointment.status == 'completed' or appointment.status == 'Completed' %}completed active{% endif %}">
                     <div class="step-dot"></div>
                     <div class="step-label">Completed</div>
                 </div>
-                {% if appointment.status == 'Cancelled' %}
+                {% if appointment.status == 'cancelled' or appointment.status == 'Cancelled' %}
                 <div class="timeline-step active">
                     <div class="step-dot bg-danger border-danger"></div>
                     <div class="step-label text-danger">Cancelled</div>
@@ -214,8 +235,8 @@
                                     <i class="fas fa-check-circle me-1"></i> Payment Received
                                 </span>
                                 {% else %}
-                                <span class="badge bg-warning-light text-warning-dark px-3 py-2 rounded-pill"
-                                    style="background: #fff4e5;">
+                                <span class="badge px-3 py-2 rounded-pill"
+                                    style="background: #fff3cd; color: #856404;">
                                     <i class="fas fa-clock me-1"></i> Payment Pending
                                 </span>
                                 {% endif %}
@@ -255,8 +276,22 @@
                         {% csrf_token %}
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">Rating</label>
-                                {{ review_form.rating }}
+                                <label class="form-label fw-bold d-block mb-1">Rating</label>
+                                <div class="star-rating-input">
+                                    <input type="radio" id="star5" name="rating" value="5" required />
+                                    <label for="star5" class="fas fa-star"></label>
+                                    <input type="radio" id="star4" name="rating" value="4" />
+                                    <label for="star4" class="fas fa-star"></label>
+                                    <input type="radio" id="star3" name="rating" value="3" />
+                                    <label for="star3" class="fas fa-star"></label>
+                                    <input type="radio" id="star2" name="rating" value="2" />
+                                    <label for="star2" class="fas fa-star"></label>
+                                    <input type="radio" id="star1" name="rating" value="1" />
+                                    <label for="star1" class="fas fa-star"></label>
+                                </div>
+                                {% if review_form.rating.errors %}
+                                    <div class="text-danger small mt-1">{{ review_form.rating.errors }}</div>
+                                {% endif %}
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-bold">Your Experience (Optional)</label>
@@ -326,17 +361,20 @@
             </div>
             {% endif %}
 
-            <!-- Check-in QR (Simulated) -->
-            <div class="card detail-card mb-4">
+            <!-- Clinic Pass Generator -->
+            <div class="card detail-card mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);">
                 <div class="card-body p-4 text-center">
-                    <h5 class="fw-bold mb-3">Check-in Pass</h5>
-                    <div class="qr-placeholder mb-3">
-                        <i class="fas fa-qrcode fa-6x text-muted opacity-50"></i>
-                        <p class="text-muted mt-3 mb-0 small">Show this at the clinic desk</p>
+                    <div class="mb-3">
+                        <span class="fa-stack fa-2x text-primary">
+                            <i class="fas fa-circle fa-stack-2x opacity-25"></i>
+                            <i class="fas fa-id-badge fa-stack-1x"></i>
+                        </span>
                     </div>
-                    <div class="alert alert-info py-2 small mb-0">
-                        <i class="fas fa-info-circle me-1"></i> Arrive 15 mins early
-                    </div>
+                    <h5 class="fw-bold mb-2">Clinic Entry Pass</h5>
+                    <p class="text-muted small mb-4">Generate and download your official appointment pass to show at the reception desk.</p>
+                    <button class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm w-100" data-bs-toggle="modal" data-bs-target="#clinicPassModal">
+                        <i class="fas fa-ticket-alt me-2"></i> Generate Pass
+                    </button>
                 </div>
             </div>
 
@@ -344,13 +382,105 @@
             <div class="card detail-card bg-primary text-white">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3">Clinic Location</h5>
-                    <p class="small mb-4 opacity-75"><i class="fas fa-map-marker-alt me-2"></i>{{ appointment.doctor.clinic_address|default:"Premium Care Hospital, Medical District, Floor 4" }}</p>
+                    <p class="small mb-2 opacity-75"><i class="fas fa-map-marker-alt me-2"></i>{{ appointment.doctor.clinic_address|default:"Premium Care Hospital, Medical District, Floor 4" }}</p>
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ appointment.doctor.clinic_address|urlencode }}" target="_blank" class="d-block mb-3" style="position: relative; border-radius: 10px; overflow: hidden; text-decoration: none;">
+                        <div style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 10;"></div>
+                        <iframe 
+                            width="100%" 
+                            height="150" 
+                            frameborder="0" 
+                            style="border:0; pointer-events: none;" 
+                            src="https://maps.google.com/maps?q={{ appointment.doctor.clinic_address|urlencode }}&t=&z=14&ie=UTF8&iwloc=&output=embed" 
+                            allowfullscreen>
+                        </iframe>
+                    </a>
                     <div class="d-grid">
-                        <button class="btn btn-outline-light btn-sm rounded-pill">Get Directions</button>
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ appointment.doctor.clinic_address|urlencode }}" target="_blank" class="btn btn-outline-light btn-sm rounded-pill">Get Directions</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Clinic Pass Modal -->
+<div class="modal fade" id="clinicPassModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4" style="box-shadow: 0 20px 50px rgba(0,0,0,0.15);">
+            <!-- Pass Header -->
+            <div class="modal-header border-0 bg-primary text-white rounded-top-4 p-4 d-flex justify-content-between align-items-start">
+                <div>
+                    <h4 class="fw-bold mb-0"><i class="fas fa-hospital-alt me-2"></i> Premium Care</h4>
+                    <span class="small opacity-75 text-uppercase letter-spacing-1">Official Clinic Pass</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Pass Body -->
+            <div class="modal-body p-0" id="printablePass">
+                <div class="p-4" style="background: url('data:image/svg+xml;utf8,<svg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M10 10l80 80M90 10L10 90\' stroke=\'rgba(0,0,0,0.02)\' stroke-width=\'2\'/></svg>') center center;">
+                    <div class="text-center mb-4">
+                        <div class="badge bg-light text-dark border px-3 py-1 rounded-pill mb-2">Valid for Entry</div>
+                        <h2 class="fw-bold text-primary mb-0">TOKEN: {{ appointment.appointment_number|slice:"-4:"|default:"001" }}</h2>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <p class="text-muted small text-uppercase mb-1 fw-bold">Patient Name</p>
+                            <h6 class="fw-bold">{{ appointment.patient.user.get_full_name|default:appointment.patient.user.username }}</h6>
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="text-muted small text-uppercase mb-1 fw-bold">Appointment ID</p>
+                            <h6 class="fw-bold font-monospace">{{ appointment.appointment_number }}</h6>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <hr class="my-0 border-dashed" style="border-style: dashed;">
+                        </div>
+                        <div class="col-6 mt-3">
+                            <p class="text-muted small text-uppercase mb-1 fw-bold">Consulting Doctor</p>
+                            <h6 class="fw-bold mb-0">Dr. {{ appointment.doctor.user.get_full_name }}</h6>
+                            <span class="small text-primary">{{ appointment.doctor.specializations.first.name }}</span>
+                        </div>
+                        <div class="col-6 text-end mt-3">
+                            <p class="text-muted small text-uppercase mb-1 fw-bold">Date & Time</p>
+                            <h6 class="fw-bold mb-0">{{ appointment.appointment_date|date:"d M Y" }}</h6>
+                            <span class="small text-danger fw-bold">{{ appointment.appointment_time|time:"g:i A" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Barcode Section -->
+                    <div class="text-center p-3 bg-light rounded-3 mt-4">
+                        <i class="fas fa-barcode fa-4x text-dark" style="transform: scaleY(1.5);"></i>
+                        <p class="font-monospace small text-muted mt-3 mb-0">{{ appointment.appointment_number }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pass Footer -->
+            <div class="modal-footer border-0 p-4 bg-light rounded-bottom-4 d-flex justify-content-between">
+                <span class="small text-muted"><i class="fas fa-info-circle me-1"></i> Bring this pass to reception.</span>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="printPass()">
+                    <i class="fas fa-print me-2"></i> Print Pass
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function printPass() {
+    var printContent = document.getElementById('printablePass').innerHTML;
+    var originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = '<div style="max-width: 500px; margin: 40px auto; border: 2px solid #000; border-radius: 15px; overflow: hidden; font-family: sans-serif;">' + 
+                              '<div style="background: #0d6efd; color: white; padding: 20px; text-align: center;"><h2>Clinic Entry Pass</h2></div>' +
+                              printContent + 
+                              '</div>';
+    
+    window.print();
+    
+    document.body.innerHTML = originalContent;
+    window.location.reload(); // Reload to restore event listeners
+}
+</script>
 {% endblock %}

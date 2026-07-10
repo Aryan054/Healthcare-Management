@@ -88,6 +88,7 @@ class DoctorProfileForm(ModelForm):
             'available_from', 'available_to', 'education', 'languages', 'awards'
         ]
         widgets = {
+            'specializations': forms.SelectMultiple(attrs={'style': 'height: 120px;', 'class': 'select2-specializations'}),
             'available_from': forms.TimeInput(attrs={'type': 'time'}),
             'available_to': forms.TimeInput(attrs={'type': 'time'}),
             'clinic_address': forms.Textarea(attrs={'rows': 3}),
@@ -100,7 +101,8 @@ class DoctorProfileForm(ModelForm):
         for field_name, field in self.fields.items():
             field.required = False
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect, forms.CheckboxSelectMultiple)):
-                field.widget.attrs.update({'class': 'form-control'})
+                existing_class = field.widget.attrs.get('class', '')
+                field.widget.attrs['class'] = f'form-control {existing_class}'.strip()
                 
         if self.instance and self.instance.pk and self.instance.available_days:
             days = self.instance.available_days.split(',')
@@ -239,7 +241,11 @@ class AdminAddDoctorForm(forms.Form):
     last_name = forms.CharField(max_length=150, required=False)
 
     # Doctor profile fields
-    specialization = forms.ModelChoiceField(queryset=Specialization.objects.all(), required=True)
+    specializations = forms.ModelMultipleChoiceField(
+        queryset=Specialization.objects.all(), 
+        required=False,
+        widget=forms.SelectMultiple(attrs={'style': 'height: 120px;', 'class': 'select2-specializations'})
+    )
     license_number = forms.CharField(max_length=50)
     experience_years = forms.IntegerField(min_value=0)
     consultation_fee = forms.DecimalField(min_value=0, decimal_places=2)
@@ -337,15 +343,7 @@ class DoctorAvailabilityForm(ModelForm):
             'valid_to': forms.DateInput(attrs={'type': 'date'}),
         }
     
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-        
-        if start_time and end_time and start_time >= end_time:
-            raise ValidationError("Start time must be before end time.")
-        
-        return cleaned_data
+    # Validation intentionally removed: allow any start/end times
 
 
 # ==========================
@@ -392,7 +390,11 @@ class NotificationForm(ModelForm):
 # Search Forms
 # ==========================
 class DoctorSearchForm(Form):
-    specialization = forms.ModelChoiceField(queryset=Specialization.objects.all(), required=False)
+    specializations = forms.ModelMultipleChoiceField(
+        queryset=Specialization.objects.all(), 
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'select2-specializations'})
+    )
     name = forms.CharField(required=False)
     available_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=False)
     min_experience = forms.IntegerField(min_value=0, max_value=60, required=False)

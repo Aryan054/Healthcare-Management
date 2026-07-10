@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
 from django.views.generic import ListView, DetailView, UpdateView, CreateView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.db.models import Q, Avg, Count, Sum
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -236,13 +236,29 @@ def profile_view(request):
         patient_form = PatientProfileForm(instance=patient)
 
     if request.method == 'POST':
-        user_form = CustomUserChangeForm(request.POST, instance=user)
-        profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+        post_data = request.POST.copy()
+        
+        # Intercept specializations for Select2 tags
+        if user.role == 'doctor':
+            specs = post_data.getlist('specializations')
+            if specs:
+                new_specs = []
+                from .models import Specialization
+                for spec in specs:
+                    if not spec.isdigit():
+                        spec_obj, _ = Specialization.objects.get_or_create(name=spec.strip())
+                        new_specs.append(str(spec_obj.pk))
+                    else:
+                        new_specs.append(spec)
+                post_data.setlist('specializations', new_specs)
+
+        user_form = CustomUserChangeForm(post_data, instance=user)
+        profile_form = ProfileForm(post_data, request.FILES, instance=profile)
         
         forms_valid = user_form.is_valid() and profile_form.is_valid()
         
         if user.role == 'doctor':
-            doctor_form = DoctorProfileForm(request.POST, instance=doctor)
+            doctor_form = DoctorProfileForm(post_data, instance=doctor)
             forms_valid = forms_valid and doctor_form.is_valid()
         elif user.role == 'patient':
             patient_form = PatientProfileForm(request.POST, instance=patient)
@@ -291,7 +307,22 @@ def change_password(request):
 @user_passes_test(is_admin)
 def add_doctor(request):
     if request.method == 'POST':
-        form = AdminAddDoctorForm(request.POST)
+        post_data = request.POST.copy()
+        
+        # Intercept specializations for Select2 tags
+        specs = post_data.getlist('specializations')
+        if specs:
+            new_specs = []
+            from .models import Specialization
+            for spec in specs:
+                if not spec.isdigit():
+                    spec_obj, _ = Specialization.objects.get_or_create(name=spec.strip())
+                    new_specs.append(str(spec_obj.pk))
+                else:
+                    new_specs.append(spec)
+            post_data.setlist('specializations', new_specs)
+
+        form = AdminAddDoctorForm(post_data)
         if form.is_valid():
             # Create the User account first
             user = User.objects.create_user(
@@ -306,13 +337,15 @@ def add_doctor(request):
             # Now, create the associated Doctor profile
             doctor = Doctor.objects.create(
                 user=user,
-                specialization=form.cleaned_data['specialization'],
                 license_number=form.cleaned_data['license_number'],
                 experience_years=form.cleaned_data['experience_years'],
                 consultation_fee=form.cleaned_data['consultation_fee'],
                 clinic_address=form.cleaned_data['clinic_address']
                 # Add defaults for other non-form fields if needed
             )
+            
+            if form.cleaned_data.get('specializations'):
+                doctor.specializations.set(form.cleaned_data['specializations'])
             
             messages.success(request, f"Doctor account for Dr. {user.get_full_name()} created successfully.")
             return redirect('admin_dashboard') # Or redirect to a doctor list page
@@ -343,9 +376,9 @@ class DoctorListView(ListView):
                     Q(user__username__icontains=name)
                 )
             
-            specialization = form.cleaned_data.get('specialization')
-            if specialization:
-                queryset = queryset.filter(specializations=specialization)
+            specializations = form.cleaned_data.get('specializations')
+            if specializations:
+                queryset = queryset.filter(specializations__in=specializations).distinct()
                 
             min_experience = form.cleaned_data.get('min_experience')
             if min_experience is not None:
@@ -369,6 +402,7 @@ class DoctorListView(ListView):
         context = super().get_context_data(**kwargs)
         context['search_form'] = DoctorSearchForm(self.request.GET or None)
         context['specializations'] = Specialization.objects.all()
+        context['selected_specializations'] = self.request.GET.getlist('specializations')
         return context
 
 class DoctorDetailView(DetailView):
@@ -430,9 +464,10 @@ def book_appointment(request, doctor_id):
 
             messages.success(request, f"Appointment booked with Dr. {doctor.user.get_full_name()}! Confirmation email sent.")
             return redirect('appointment_detail', pk=appointment.id)
+        else:
+            messages.error(request, 'Booking failed. Please check the errors in the form.')
     else:
         form = AppointmentForm(initial={'doctor': doctor})
-        messages.error(request, 'Booking failed. Please check the errors in the form.')
 
     return render(request, 'book_appointment.html', {
         'doctor': doctor,
@@ -468,7 +503,7 @@ def appointment_detail(request, pk):
                         defaults=review_form.cleaned_data
                     )
                     messages.success(request, 'Thank you for your review!')
-                    return redirect('appointment_detail', pk=pk)
+                    return redirect('doctor_detail', pk=appointment.doctor.id)
             else:
                 messages.error(request, "You can only review completed appointments.")
         
@@ -478,6 +513,16 @@ def appointment_detail(request, pk):
             if new_status in [choice[0] for choice in Appointment.STATUS_CHOICES]:
                 appointment.status = new_status
                 appointment.save()
+                
+                # Notify Patient of Status Change
+                Notification.objects.create(
+                    recipient=appointment.patient.user,
+                    notification_type='appointment',
+                    title=f"Appointment {appointment.get_status_display()}",
+                    message=f"Dr. {appointment.doctor.user.last_name} has updated your appointment on {appointment.appointment_date} to '{appointment.get_status_display()}'.",
+                    action_url=reverse('appointment_detail', kwargs={'pk': appointment.pk})
+                )
+
                 messages.success(request, f'Appointment status updated to {appointment.get_status_display()}.')
                 return redirect('appointment_detail', pk=pk)
 
@@ -590,21 +635,10 @@ def manage_availability(request):
         if form.is_valid():
             new_availability = form.save(commit=False)
             new_availability.doctor = doctor
-            
-            # Prevent overlapping schedules
-            overlapping = DoctorAvailability.objects.filter(
-                doctor=doctor,
-                day_of_week=new_availability.day_of_week,
-                start_time__lt=new_availability.end_time,
-                end_time__gt=new_availability.start_time
-            ).exists()
-
-            if overlapping:
-                messages.error(request, 'This time slot overlaps with an existing schedule.')
-            else:
-                new_availability.save()
-                messages.success(request, 'New availability slot added successfully!')
-                return redirect('manage_availability')
+            # Overlap and start/end validations removed per request; save directly
+            new_availability.save()
+            messages.success(request, 'New availability slot added successfully!')
+            return redirect('manage_availability')
         else:
             messages.error(request, 'Please correct the errors in the form.')
     else:
@@ -655,6 +689,16 @@ def create_medical_record(request, appointment_id):
             record.doctor = doctor
             record.appointment = appointment
             record.save()
+            
+            # Notify Patient of New Medical Record
+            Notification.objects.create(
+                recipient=patient.user,
+                notification_type='record',
+                title='New Medical Record Added',
+                message=f"Dr. {doctor.user.last_name} has uploaded a new medical record/prescription for your appointment.",
+                action_url=reverse('medical_record_detail', kwargs={'pk': record.pk})
+            )
+
             messages.success(request, "Medical record created successfully.")
             return redirect('appointment_detail', pk=appointment.id)
     else:

@@ -100,6 +100,23 @@
         color: #6c757d;
         margin-top: 0.25rem;
     }
+
+    .custom-checkbox-list ul, .custom-checkbox-list div {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+    
+    .custom-checkbox-list li, .custom-checkbox-list label {
+        display: block;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .custom-checkbox-list input[type="checkbox"] {
+        margin-right: 0.75rem;
+        transform: scale(1.1);
+    }
 </style>
 
 <div class="profile-header">
@@ -204,7 +221,22 @@
                                         <label class="form-label d-block fw-bold text-muted small">Profile
                                             Picture</label>
                                         <div class="d-flex align-items-center flex-wrap gap-3">
-                                            {{ profile_form.profile_picture }}
+                                            <!-- Hidden File Input -->
+                                            <input type="file" name="profile_picture" id="id_profile_picture" class="d-none" accept="image/*" onchange="document.getElementById('file-chosen').textContent = this.files[0].name">
+                                            <!-- Stylish Upload Button -->
+                                            <label for="id_profile_picture" class="btn btn-outline-primary rounded-pill mb-0 px-3 py-2">
+                                                <i class="fas fa-camera me-2"></i> Choose File
+                                            </label>
+                                            <span id="file-chosen" class="text-muted small">No file chosen</span>
+                                            
+                                            {% if request.user.profile.profile_picture %}
+                                            <div class="form-check ms-md-3 mt-2 mt-md-0">
+                                                <input type="checkbox" name="profile_picture-clear" id="profile_picture-clear_id" class="form-check-input border-danger">
+                                                <label for="profile_picture-clear_id" class="form-check-label text-danger small">
+                                                    <i class="fas fa-trash-alt me-1"></i> Remove Photo
+                                                </label>
+                                            </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -401,5 +433,18 @@
             document.getElementById('avatar-preview').src = URL.createObjectURL(file)
         }
     }
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.select2-specializations').select2({
+        tags: true,
+        placeholder: "Search or add a new specialization...",
+        tokenSeparators: [','],
+        width: '100%'
+    });
+});
 </script>
 {% endblock %}

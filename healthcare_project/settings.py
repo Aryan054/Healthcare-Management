@@ -3,16 +3,17 @@
 import os
 import dj_database_url
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
 # Quick-start development settings - unsuitable for production
-# SECRET_KEY is now back in the file for easy local development.
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY', 
-    'django-insecure-a-default-secret-key-for-local-development' # A fallback value
-)
+# SECRET_KEY is now loaded securely from the .env file
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # Email Configuration (Console Backend for Development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -24,12 +25,15 @@ EMAIL_USE_TLS = False
 DEFAULT_FROM_EMAIL = 'noreply@healthcare.local'
 
 # DEBUG is set to True for local development
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 
-ALLOWED_HOSTS = [ ".vercel.app", "Aryan054.pythonanywhere.com"   # allows ALL Vercel preview URLs
+ALLOWED_HOSTS = [
+    ".vercel.app",
+    "Aryan054.pythonanywhere.com",
     "localhost",
-    "127.0.0.1",]
+    "127.0.0.1",
+]
 
 
 
@@ -84,17 +88,17 @@ WSGI_APPLICATION = 'healthcare_project.wsgi.application'
 
 
 # ==========================================================
-# --- DATABASE IS NOW BACK TO THE SIMPLE SQLITE VERSION ---
+# --- DATABASE CONFIGURATION LOADED FROM .ENV VARIABLES ---
 # ==========================================================
 DATABASES = {
     # This is the default database used for local development
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'healthcare_db',
-        "USER": "postgres",
-        "PASSWORD": "12345",
-        "HOST": "localhost",
-        "PORT": "5432",
+        'NAME': os.environ.get('DB_NAME'),
+        "USER": os.environ.get('DB_USER'),
+        "PASSWORD": os.environ.get('DB_PASSWORD'),
+        "HOST": os.environ.get('DB_HOST'),
+        "PORT": os.environ.get('DB_PORT'),
 
     }
 }

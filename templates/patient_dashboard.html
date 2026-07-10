@@ -227,6 +227,35 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Recent Notifications -->
+            <div class="card shadow-sm border-0 mt-4 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Recent Alerts</h5>
+                        <a href="{% url 'notification_list' %}" class="btn btn-sm btn-link text-decoration-none p-0">View All</a>
+                    </div>
+                    
+                    <div class="list-group list-group-flush">
+                        {% for notif in recent_notifications %}
+                        <a href="{% url 'notification_list' %}" class="list-group-item list-group-item-action px-0 py-2 border-bottom-0 d-flex align-items-center">
+                            <div class="bg-{% if not notif.is_read %}primary{% else %}light{% endif %}-subtle rounded p-2 me-3 text-{% if not notif.is_read %}primary{% else %}secondary{% endif %}">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 small fw-bold {% if not notif.is_read %}text-dark{% else %}text-muted{% endif %}">{{ notif.title|truncatechars:30 }}</h6>
+                                <small class="text-muted" style="font-size: 0.75rem;">{{ notif.created_at|timesince }} ago</small>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="text-center text-muted small py-3">
+                            <i class="far fa-bell-slash fs-4 mb-2 opacity-50"></i><br>
+                            No recent notifications
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

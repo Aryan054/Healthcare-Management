@@ -51,10 +51,10 @@
                                 {{ form.last_name }}
                             </div>
                         </div>
-                         <div class="mb-3">
-                            <label for="{{ form.specialization.id_for_label }}" class="form-label">Specialization</label>
-                            {{ form.specialization }}
-                            {% if form.specialization.errors %}<div class="text-danger small mt-1">{{ form.specialization.errors.as_text }}</div>{% endif %}
+                        <div class="mb-3">
+                            <label for="{{ form.specializations.id_for_label }}" class="form-label">Specializations</label>
+                            {{ form.specializations }}
+                            {% if form.specializations.errors %}<div class="text-danger small mt-1">{{ form.specializations.errors.as_text }}</div>{% endif %}
                         </div>
                         <div class="mb-3">
                             <label for="{{ form.license_number.id_for_label }}" class="form-label">License Number</label>
@@ -98,4 +98,17 @@ input[type='number'], input[type='decimal'], select, textarea {
     border-radius: .25rem;
 }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.select2-specializations').select2({
+        tags: true,
+        placeholder: "Search or add a new specialization...",
+        tokenSeparators: [','],
+        width: '100%'
+    });
+});
+</script>
 {% endblock %}

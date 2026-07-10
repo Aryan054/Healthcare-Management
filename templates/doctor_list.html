@@ -107,11 +107,10 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">Specialization</label>
-                            <select name="specialization" class="form-select">
-                                <option value="">All Specialities</option>
+                            <label class="form-label small fw-bold text-muted">Specializations</label>
+                            <select name="specializations" class="form-select select2-specializations" multiple="multiple">
                                 {% for spec in specializations %}
-                                {% if request.GET.specialization == spec.id|stringformat:"s" %}
+                                {% if spec.id|stringformat:"s" in selected_specializations %}
                                 <option value="{{ spec.id }}" selected>{{ spec.name }}</option>
                                 {% else %}
                                 <option value="{{ spec.id }}">{{ spec.name }}</option>
@@ -184,12 +183,12 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ms-md-4 mt-3 mt-md-0 text-center text-md-end">
-                                    <div class="d-grid d-md-block gap-2">
+                                <div class="ms-md-4 mt-3 mt-md-0">
+                                    <div class="d-flex flex-column gap-2">
                                         <a href="{% url 'doctor_detail' doctor.pk %}"
-                                            class="btn btn-outline-primary btn-book me-md-2">View Profile</a>
+                                            class="btn btn-outline-primary btn-book">View Profile</a>
                                         <a href="{% url 'book_appointment' doctor.id %}"
-                                            class="btn btn-primary btn-book">Book Now</a>
+                                            class="btn btn-primary btn-book shadow-sm">Book Now</a>
                                     </div>
                                 </div>
                             </div>
@@ -210,4 +209,15 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.select2-specializations').select2({
+        placeholder: "Filter by Specialization...",
+        width: '100%'
+    });
+});
+</script>
 {% endblock %}
