@@ -61,9 +61,23 @@
         </div>
         <div class="card-body p-4 p-md-5 bg-white">
             <div class="alert alert-info py-2 small mb-4">
-                <i class="fas fa-info-circle me-2"></i> Choosing a new time will notify Dr. {{
-                appointment.doctor.user.last_name }}.
+                <i class="fas fa-info-circle me-2"></i> Choosing a new time will notify Dr. {{ appointment.doctor.user.last_name }}.
             </div>
+
+            {% if form.errors %}
+            <div class="alert alert-danger py-2 small mb-4">
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
 
             <form method="post">
                 {% csrf_token %}
@@ -73,7 +87,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i
                                 class="far fa-calendar text-primary"></i></span>
-                        {{ form.appointment_date }}
+                        {{ form.new_date }}
                     </div>
                 </div>
 
@@ -82,7 +96,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light border-0"><i
                                 class="far fa-clock text-primary"></i></span>
-                        {{ form.appointment_time }}
+                        {{ form.new_time }}
                     </div>
                 </div>
 

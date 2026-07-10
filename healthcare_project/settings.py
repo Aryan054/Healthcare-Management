@@ -90,30 +90,16 @@ WSGI_APPLICATION = 'healthcare_project.wsgi.application'
 # ==========================================================
 # --- DATABASE CONFIGURATION LOADED FROM .ENV VARIABLES ---
 # ==========================================================
+# We use dj_database_url to parse the DATABASE_URL connection string
+import dj_database_url
 DATABASES = {
-    # This is the default database used for local development
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        "USER": os.environ.get('DB_USER'),
-        "PASSWORD": os.environ.get('DB_PASSWORD'),
-        "HOST": os.environ.get('DB_HOST'),
-        "PORT": os.environ.get('DB_PORT'),
-
-    }
-}
-
-# This special environment variable is automatically set by Vercel
-# when you connect a database.
-if 'POSTGRES_URL' in os.environ:
-   
-    DATABASES['default'] = dj_database_url.config(
-        conn_max_age=600,
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=0, # Set to 0 to prevent "SSL connection closed unexpectedly" errors with Neon
         conn_health_checks=True,
-        ssl_require=True, # Vercel Postgres requires a secure connection
-    ) 
-
-
+        ssl_require=True,
+    )
+}
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

@@ -267,16 +267,53 @@ def profile_view(request):
         if forms_valid:
             user_form.save()
             profile_form.save()
-            if doctor_form: doctor_form.save()
+            if doctor_form:
+                doctor = doctor_form.save(commit=False)
+                
+                # Parse 7-day schedule
+                DoctorAvailability.objects.filter(doctor=doctor).delete()
+                active_days = []
+                for day_val, _ in DoctorAvailability.DAY_CHOICES:
+                    if request.POST.get(f'day_active_{day_val}') == 'on':
+                        start_str = request.POST.get(f'day_start_{day_val}', '09:00')
+                        end_str = request.POST.get(f'day_end_{day_val}', '17:00')
+                        DoctorAvailability.objects.create(
+                            doctor=doctor,
+                            day_of_week=day_val,
+                            start_time=start_str,
+                            end_time=end_str,
+                            is_available=True,
+                            valid_from=timezone.now().date()
+                        )
+                        active_days.append(str(day_val))
+                
+                doctor.available_days = ",".join(active_days)
+                doctor.save()
+                doctor_form.save_m2m()
+                
             if patient_form: patient_form.save()
             messages.success(request, 'Profile updated successfully!')
             return redirect('profile')
         else:
             messages.error(request, 'Please correct the errors below.')
 
+    schedule_data = []
+    if user.role == 'doctor':
+        availabilities = {a.day_of_week: a for a in DoctorAvailability.objects.filter(doctor=doctor)}
+        for day_val, day_name in DoctorAvailability.DAY_CHOICES:
+            avail = availabilities.get(day_val)
+            schedule_data.append({
+                'day_val': day_val,
+                'day_name': day_name,
+                'is_active': avail is not None and avail.is_available,
+                'start_time': avail.start_time.strftime('%H:%M') if avail else '09:00',
+                'end_time': avail.end_time.strftime('%H:%M') if avail else '17:00',
+            })
+
     context = {
         'user_form': user_form, 'profile_form': profile_form,
         'doctor_form': doctor_form, 'patient_form': patient_form,
+        'schedule_data': schedule_data,
     }
     return render(request, 'profile.html', context)
 
@@ -627,28 +664,8 @@ def reschedule_appointment(request, pk):
 @login_required
 @user_passes_test(is_doctor)
 def manage_availability(request):
-    doctor = get_object_or_404(Doctor, user=request.user)
-    availabilities = DoctorAvailability.objects.filter(doctor=doctor).order_by('day_of_week', 'start_time')
-
-    if request.method == 'POST':
-        form = DoctorAvailabilityForm(request.POST)
-        if form.is_valid():
-            new_availability = form.save(commit=False)
-            new_availability.doctor = doctor
-            # Overlap and start/end validations removed per request; save directly
-            new_availability.save()
-            messages.success(request, 'New availability slot added successfully!')
-            return redirect('manage_availability')
-        else:
-            messages.error(request, 'Please correct the errors in the form.')
-    else:
-        form = DoctorAvailabilityForm()
-
-    context = {
-        'form': form,
-        'availabilities': availabilities,
-    }
-    return render(request, 'manage_availability.html', context)
+    messages.info(request, "Availability management has been moved to your profile.")
+    return redirect('profile')
 
 
 # ==========================================================
@@ -875,7 +892,7 @@ def payment_success(request, payment_id):
     return render(request, 'payment_success.html', context)
 
 @login_required
-@user_passes_test(lambda u: is_doctor(u) or is_admin(u))
+@user_passes_test(lambda u: is_doctor(u) or is_admin(u) or is_patient(u))
 def payment_list(request):
     user = request.user
     payments = Payment.objects.select_related('patient__user', 'appointment__doctor__user').all()
@@ -883,6 +900,8 @@ def payment_list(request):
 
     if is_doctor(user):
         payments = payments.filter(appointment__doctor__user=user)
+    elif is_patient(user):
+        payments = payments.filter(patient__user=user)
     
     query = request.GET.get('q')
     if query:

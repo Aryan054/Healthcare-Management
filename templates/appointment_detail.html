@@ -140,9 +140,9 @@
     <div class="row mb-5">
         <div class="col-lg-10 mx-auto">
             <div class="status-timeline">
-                <div class="timeline-step {% if appointment.status == 'pending' or appointment.status == 'Pending' %}active{% elif appointment.status in 'confirmed,Confirmed,in_progress,In Progress,completed,Completed' %}completed{% endif %}">
+                <div class="timeline-step {% if appointment.status in 'pending,Pending,rescheduled,Rescheduled' %}active{% elif appointment.status in 'confirmed,Confirmed,in_progress,In Progress,completed,Completed' %}completed{% endif %}">
                     <div class="step-dot"></div>
-                    <div class="step-label">Pending</div>
+                    <div class="step-label">{% if appointment.status == 'rescheduled' or appointment.status == 'Rescheduled' %}Rescheduled{% else %}Pending{% endif %}</div>
                 </div>
                 <div class="timeline-step {% if appointment.status == 'confirmed' or appointment.status == 'Confirmed' %}active{% elif appointment.status in 'in_progress,In Progress,completed,Completed' %}completed{% endif %}">
                     <div class="step-dot"></div>
@@ -251,13 +251,19 @@
                             <i class="fas fa-arrow-left me-2"></i>Back to My List
                         </a>
                         <div class="d-flex gap-2">
-                            {% if request.user.role == 'patient' and appointment.status != 'Cancelled' and appointment.status != 'Completed' %}
+                            {% if request.user.role == 'patient' and appointment.status != 'cancelled' and appointment.status != 'completed' %}
                             <a href="{% url 'reschedule_appointment' appointment.id %}"
                                 class="btn btn-outline-primary px-4 rounded-pill">Reschedule</a>
                             {% endif %}
-                            {% if request.user.role == 'patient' and appointment.payment_status != 'paid' and appointment.status != 'Cancelled' %}
-                            <a href="{% url 'process_payment' appointment.id %}"
-                                class="btn btn-primary px-4 rounded-pill shadow-sm">Complete Payment</a>
+                            
+                            {% if request.user.role == 'patient' %}
+                                {% if appointment.payment_status != 'paid' and appointment.status != 'cancelled' %}
+                                <a href="{% url 'process_payment' appointment.id %}"
+                                    class="btn btn-primary px-4 rounded-pill shadow-sm">Complete Payment</a>
+                                {% elif appointment.payment_status == 'paid' and appointment.payment %}
+                                <a href="{% url 'payment_success' appointment.payment.id %}"
+                                    class="btn btn-success px-4 rounded-pill shadow-sm"><i class="fas fa-receipt me-2"></i>View Receipt</a>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>

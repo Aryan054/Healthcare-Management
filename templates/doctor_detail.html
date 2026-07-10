@@ -277,18 +277,22 @@
                     </div>
                     <div class="card-body pt-0">
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 py-3">
-                                <span class="text-muted">Days</span>
-                                <span class="fw-bold text-primary">{{ doctor.formatted_available_days }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 py-3">
-                                <span class="text-muted">From</span>
-                                <span class="fw-bold">{{ doctor.available_from|time:"g:i A" }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 py-3">
-                                <span class="text-muted">To</span>
-                                <span class="fw-bold">{{ doctor.available_to|time:"g:i A" }}</span>
-                            </li>
+                            {% if doctor.availabilities.all %}
+                                {% for avail in doctor.availabilities.all|dictsort:"day_of_week" %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center border-0 py-2">
+                                    <span class="text-muted">{{ avail.get_day_of_week_display }}</span>
+                                    {% if avail.is_available %}
+                                    <span class="fw-bold">{{ avail.start_time|time:"g:i A" }} - {{ avail.end_time|time:"g:i A" }}</span>
+                                    {% else %}
+                                    <span class="fw-bold text-danger">Closed</span>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="list-group-item text-center text-muted border-0 py-4">
+                                    Schedule not provided yet.
+                                </li>
+                            {% endif %}
                         </ul>
                         {% if is_patient %}
                         <div class="d-grid mt-4">

@@ -335,17 +335,34 @@
                                     </div>
                                     <hr class="my-4">
                                     <h5 class="fw-bold mb-3">Availability Schedule</h5>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-muted small">Working Days</label>
-                                        {{ doctor_form.available_days }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-muted small">Start Time</label>
-                                        {{ doctor_form.available_from }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-muted small">End Time</label>
-                                        {{ doctor_form.available_to }}
+                                    
+                                    <div class="col-12">
+                                        <p class="text-muted small mb-4">Toggle the days you are available and set your working hours for each day.</p>
+                                        
+                                        <div class="schedule-container bg-light rounded-3 p-4">
+                                            {% for day in schedule_data %}
+                                            <div class="row align-items-center mb-3 pb-3 border-bottom border-secondary-subtle schedule-row">
+                                                <div class="col-md-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input day-toggle" type="checkbox" role="switch" name="day_active_{{ day.day_val }}" id="day_{{ day.day_val }}" {% if day.is_active %}checked{% endif %}>
+                                                        <label class="form-check-label fw-bold" for="day_{{ day.day_val }}">{{ day.day_name }}</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-text bg-white">From</span>
+                                                        <input type="time" class="form-control time-input" name="day_start_{{ day.day_val }}" value="{{ day.start_time }}" {% if not day.is_active %}disabled{% endif %}>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="input-group input-group-sm">
+                                                        <span class="input-group-text bg-white">To</span>
+                                                        <input type="time" class="form-control time-input" name="day_end_{{ day.day_val }}" value="{{ day.end_time }}" {% if not day.is_active %}disabled{% endif %}>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                 </div>
                                 {% elif patient_form %}
@@ -433,6 +450,20 @@
             document.getElementById('avatar-preview').src = URL.createObjectURL(file)
         }
     }
+
+    // Schedule toggling logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggles = document.querySelectorAll('.day-toggle');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const row = this.closest('.schedule-row');
+                const timeInputs = row.querySelectorAll('.time-input');
+                timeInputs.forEach(input => {
+                    input.disabled = !this.checked;
+                });
+            });
+        });
+    });
 </script>
 {% endblock %}
 

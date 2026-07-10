@@ -29,6 +29,12 @@ class User(AbstractUser):
     )
     is_verified = models.BooleanField(default=False)
     
+    def save(self, *args, **kwargs):
+        # Automatically assign 'admin' role if the user is a superuser (e.g., created via createsuperuser)
+        if self.is_superuser:
+            self.role = 'admin'
+        super().save(*args, **kwargs)
+    
     def get_role_display(self):
         return dict(self.ROLE_CHOICES).get(self.role, 'Patient')
 

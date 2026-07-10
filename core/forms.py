@@ -74,23 +74,15 @@ class ProfileForm(ModelForm):
 
 
 class DoctorProfileForm(ModelForm):
-    available_days = forms.MultipleChoiceField(
-        choices=DoctorAvailability.DAY_CHOICES,
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
-    
     class Meta:
         model = Doctor
         fields = [
             'specializations', 'experience_years', 'consultation_fee',
-            'license_number', 'clinic_address', 'available_days',
-            'available_from', 'available_to', 'education', 'languages', 'awards'
+            'license_number', 'clinic_address',
+            'education', 'languages', 'awards'
         ]
         widgets = {
             'specializations': forms.SelectMultiple(attrs={'style': 'height: 120px;', 'class': 'select2-specializations'}),
-            'available_from': forms.TimeInput(attrs={'type': 'time'}),
-            'available_to': forms.TimeInput(attrs={'type': 'time'}),
             'clinic_address': forms.Textarea(attrs={'rows': 3}),
             'education': forms.Textarea(attrs={'rows': 3}),
             'awards': forms.Textarea(attrs={'rows': 3}),
@@ -104,26 +96,8 @@ class DoctorProfileForm(ModelForm):
                 existing_class = field.widget.attrs.get('class', '')
                 field.widget.attrs['class'] = f'form-control {existing_class}'.strip()
                 
-        if self.instance and self.instance.pk and self.instance.available_days:
-            days = self.instance.available_days.split(',')
-            day_map = {v: str(k) for k, v in DoctorAvailability.DAY_CHOICES}
-            self.initial['available_days'] = [day_map.get(d.strip()) for d in days if d.strip() in day_map]
-    
-    def clean_available_days(self):
-        data = self.cleaned_data.get('available_days')
-        if isinstance(data, list):
-            day_map = dict(DoctorAvailability.DAY_CHOICES)
-            return ",".join([day_map.get(int(d), str(d)) for d in data])
-        return data
-
     def clean(self):
         cleaned_data = super().clean()
-        available_from = cleaned_data.get('available_from')
-        available_to = cleaned_data.get('available_to')
-        
-        if available_from and available_to and available_from >= available_to:
-            raise ValidationError("Available 'from' time must be before 'to' time.")
-        
         return cleaned_data
 
 
@@ -193,12 +167,15 @@ class AppointmentForm(ModelForm):
         return cleaned_data
 
 class AppointmentRescheduleForm(forms.Form):
-    new_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
-    new_time = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}))
+    new_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    new_time = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
     
     def __init__(self, *args, **kwargs):
         self.appointment = kwargs.pop('appointment', None)
         super().__init__(*args, **kwargs)
+        if self.appointment:
+            self.fields['new_date'].initial = self.appointment.appointment_date
+            self.fields['new_time'].initial = self.appointment.appointment_time
     
     def clean(self):
         cleaned_data = super().clean()
@@ -226,7 +203,7 @@ class AppointmentRescheduleForm(forms.Form):
                 doctor=self.appointment.doctor,
                 appointment_date=new_date,
                 appointment_time=new_time,
-                status__in=['pending', 'confirmed']
+                status__in=['pending', 'confirmed', 'rescheduled']
             ).exclude(id=self.appointment.id).exists():
                 raise ValidationError("This time slot is already booked.")
         

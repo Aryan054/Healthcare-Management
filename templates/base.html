@@ -127,14 +127,28 @@
                 <a href="{% url 'profile' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-user fa-fw me-2 opacity-75"></i>Profile</a>
                 
                 {% if user.role == 'patient' %}
-                <div class="text-muted small fw-bold text-uppercase mb-2 mt-4 px-2">Patient</div>
+                <div class="text-muted small fw-bold text-uppercase mb-2 mt-4 px-2">Patient Services</div>
                 <a href="{% url 'doctor_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-user-md fa-fw me-2 opacity-75"></i>Find a Doctor</a>
                 <a href="{% url 'appointment_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-calendar-check fa-fw me-2 opacity-75"></i>My Appointments</a>
+                <a href="{% url 'medical_record_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-notes-medical fa-fw me-2 opacity-75"></i>Medical Records</a>
+                <a href="{% url 'payment_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-file-invoice-dollar fa-fw me-2 opacity-75"></i>Payments</a>
                 {% endif %}
                 
-                {% if user.role == 'doctor' or user.role == 'admin' %}
-                <div class="text-muted small fw-bold text-uppercase mb-2 mt-4 px-2">Clinic</div>
+                {% if user.role == 'doctor' %}
+                <div class="text-muted small fw-bold text-uppercase mb-2 mt-4 px-2">Doctor Services</div>
+                <a href="{% url 'appointment_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-calendar-check fa-fw me-2 opacity-75"></i>My Appointments</a>
+                <a href="{% url 'medical_record_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-notes-medical fa-fw me-2 opacity-75"></i>Patient Records</a>
                 <a href="{% url 'payment_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-file-invoice-dollar fa-fw me-2 opacity-75"></i>Payments</a>
+                {% endif %}
+
+                {% if user.role == 'admin' %}
+                <div class="text-muted small fw-bold text-uppercase mb-2 mt-4 px-2">Administration</div>
+                <a href="{% url 'user_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-users fa-fw me-2 opacity-75"></i>Manage Users</a>
+                <a href="{% url 'doctor_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-user-md fa-fw me-2 opacity-75"></i>Manage Doctors</a>
+                <a href="{% url 'add_doctor' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-user-plus fa-fw me-2 opacity-75"></i>Add Doctor</a>
+                <a href="{% url 'appointment_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-calendar-check fa-fw me-2 opacity-75"></i>All Appointments</a>
+                <a href="{% url 'medical_record_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-notes-medical fa-fw me-2 opacity-75"></i>All Medical Records</a>
+                <a href="{% url 'payment_list' %}" class="list-group-item list-group-item-action border-0 rounded mb-1"><i class="fas fa-file-invoice-dollar fa-fw me-2 opacity-75"></i>All Payments</a>
                 {% endif %}
                 
                 <hr class="my-3 mx-2 opacity-10">
