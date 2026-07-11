@@ -182,7 +182,7 @@
 
         <!-- Main Form Area -->
         <div class="col-lg-9">
-            <form method="post" enctype="multipart/form-data">
+            <form method="post" enctype="multipart/form-data" hx-boost="false">
                 {% csrf_token %}
                 
                 {% if user_form.errors or profile_form.errors or doctor_form.errors or patient_form.errors %}
