@@ -7,6 +7,7 @@ urlpatterns = [
     # All app URLs are now included under the root path
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')), # Add allauth urls
+    path('api/v1/', include('core.api_urls')), # REST API routes
     path('', include('core.urls')),
 ]
 

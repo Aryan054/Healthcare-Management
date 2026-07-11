@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'rest_framework',
+    'rest_framework_simplejwt',
     'cloudinary_storage',
     'django.contrib.staticfiles',
     'cloudinary',
@@ -187,3 +189,21 @@ SOCIALACCOUNT_LOGIN_ON_GET = True # Skip the confirmation page by default
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http' # Crucial for local development to avoid https redirects
 ACCOUNT_LOGOUT_ON_GET = True # Skip logout confirmation
 SOCIALACCOUNT_AUTO_SIGNUP = True # auto-signup social users
+
+# Django Rest Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
