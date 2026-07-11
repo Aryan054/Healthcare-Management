@@ -694,9 +694,7 @@ def create_medical_record(request, appointment_id):
     patient = appointment.patient
     doctor = appointment.doctor
 
-    if MedicalRecord.objects.filter(appointment=appointment).exists():
-        messages.info(request, "A medical record for this appointment already exists.")
-        return redirect('appointment_detail', pk=appointment.id)
+
 
     if request.method == 'POST':
         form = MedicalRecordForm(request.POST, request.FILES)
